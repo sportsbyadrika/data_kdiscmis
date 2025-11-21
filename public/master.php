@@ -92,7 +92,7 @@ function build_filter_options(string $field, array $options): array
     return match ($field) {
         'district_id' => $options['districts'],
         'local_body_type_id' => $options['local_body_types'],
-        'education_category' => $options['education_categories'],
+        'qualification_category' => $options['qualification_categories'],
         'institution_type' => $options['institution_types'],
         'local_body_id' => $options['local_bodies'],
         'block_panchayat_id' => $options['block_panchayats'],

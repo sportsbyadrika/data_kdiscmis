@@ -11,6 +11,11 @@ CREATE TABLE IF NOT EXISTS districts (
     name VARCHAR(120) NOT NULL UNIQUE
 );
 
+CREATE TABLE IF NOT EXISTS qualification_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE
+);
+
 CREATE TABLE IF NOT EXISTS local_body_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL UNIQUE
@@ -54,17 +59,19 @@ CREATE TABLE IF NOT EXISTS academic_institutions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     district_id INT NOT NULL,
-    education_category VARCHAR(120) DEFAULT '',
+    qualification_category INT NULL,
     institution_type VARCHAR(120) DEFAULT '',
-    FOREIGN KEY (district_id) REFERENCES districts(id)
+    FOREIGN KEY (district_id) REFERENCES districts(id),
+    FOREIGN KEY (qualification_category) REFERENCES qualification_categories(id)
 );
 
 CREATE TABLE IF NOT EXISTS education_courses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     district_id INT NOT NULL,
-    education_category VARCHAR(120) DEFAULT '',
-    FOREIGN KEY (district_id) REFERENCES districts(id)
+    qualification_category INT NULL,
+    FOREIGN KEY (district_id) REFERENCES districts(id),
+    FOREIGN KEY (qualification_category) REFERENCES qualification_categories(id)
 );
 
 CREATE TABLE IF NOT EXISTS cds_list (
