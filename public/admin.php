@@ -69,14 +69,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = 'Facilitation center added.';
                 }
                 break;
+            case 'create_qualification_category':
+                create_simple($conn, 'qualification_categories', $_POST['name'] ?? '', $message);
+                break;
             case 'create_institution':
                 $name = trim($_POST['name'] ?? '');
                 $district = (int) ($_POST['district_id'] ?? 0);
-                $category = trim($_POST['education_category'] ?? '');
+                $qualificationCategory = (int) ($_POST['qualification_category'] ?? 0);
                 $type = trim($_POST['institution_type'] ?? '');
                 if ($name && $district) {
-                    $stmt = $conn->prepare('INSERT INTO academic_institutions (name, district_id, education_category, institution_type) VALUES (?, ?, ?, ?)');
-                    $stmt->bind_param('siss', $name, $district, $category, $type);
+                    $qualificationValue = $qualificationCategory ?: null;
+                    $stmt = $conn->prepare('INSERT INTO academic_institutions (name, district_id, qualification_category, institution_type) VALUES (?, ?, ?, ?)');
+                    $stmt->bind_param('siis', $name, $district, $qualificationValue, $type);
                     $stmt->execute();
                     $message = 'Academic institution added.';
                 }
@@ -84,10 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'create_course':
                 $name = trim($_POST['name'] ?? '');
                 $district = (int) ($_POST['district_id'] ?? 0);
-                $category = trim($_POST['education_category'] ?? '');
+                $qualificationCategory = (int) ($_POST['qualification_category'] ?? 0);
                 if ($name && $district) {
-                    $stmt = $conn->prepare('INSERT INTO education_courses (name, district_id, education_category) VALUES (?, ?, ?)');
-                    $stmt->bind_param('sis', $name, $district, $category);
+                    $qualificationValue = $qualificationCategory ?: null;
+                    $stmt = $conn->prepare('INSERT INTO education_courses (name, district_id, qualification_category) VALUES (?, ?, ?)');
+                    $stmt->bind_param('sii', $name, $district, $qualificationValue);
                     $stmt->execute();
                     $message = 'Course/trade added.';
                 }

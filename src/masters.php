@@ -31,7 +31,7 @@ function fetch_filter_options(mysqli $conn): array
     return [
         'districts' => fetch_named($conn, 'districts'),
         'local_body_types' => fetch_named($conn, 'local_body_types'),
-        'education_categories' => fetch_distinct($conn, 'academic_institutions', 'education_category'),
+        'qualification_categories' => fetch_named($conn, 'qualification_categories'),
         'institution_types' => fetch_distinct($conn, 'academic_institutions', 'institution_type'),
         'local_bodies' => fetch_named($conn, 'local_bodies'),
         'block_panchayats' => fetch_named($conn, 'block_panchayats'),
@@ -100,19 +100,26 @@ function master_definitions(): array
                 'local_body_name' => 'Local Body',
             ],
         ],
+        'qualification_categories' => [
+            'title' => 'Qualification Categories',
+            'group' => 'Academic',
+            'table' => 'qualification_categories',
+            'filters' => [],
+            'columns' => ['name' => 'Qualification Category'],
+        ],
         'academic_institutions' => [
             'title' => 'Academic Institutions',
             'group' => 'Academic',
             'table' => 'academic_institutions',
-            'filters' => ['district_id' => 'District', 'education_category' => 'Education Category', 'institution_type' => 'Institution Type'],
-            'columns' => ['name' => 'Institution', 'district_name' => 'District', 'education_category' => 'Category', 'institution_type' => 'Type'],
+            'filters' => ['district_id' => 'District', 'qualification_category' => 'Qualification Category', 'institution_type' => 'Institution Type'],
+            'columns' => ['name' => 'Institution', 'district_name' => 'District', 'qualification_category_name' => 'Qualification Category', 'institution_type' => 'Type'],
         ],
         'education_courses' => [
             'title' => 'Education Courses/Trades',
             'group' => 'Academic',
             'table' => 'education_courses',
-            'filters' => ['district_id' => 'District', 'education_category' => 'Education Category'],
-            'columns' => ['name' => 'Course/Trade', 'district_name' => 'District', 'education_category' => 'Category'],
+            'filters' => ['district_id' => 'District', 'qualification_category' => 'Qualification Category'],
+            'columns' => ['name' => 'Course/Trade', 'district_name' => 'District', 'qualification_category_name' => 'Qualification Category'],
         ],
         'cds_list' => [
             'title' => 'CDS',
@@ -160,7 +167,7 @@ function fetch_master_rows(mysqli $conn, string $key, array $filters, string $se
             continue;
         }
         $conditions[] = "{$field} = ?";
-        $isIdField = str_ends_with($field, '_id');
+        $isIdField = str_ends_with($field, '_id') || $field === 'qualification_category';
         $types .= $isIdField ? 'i' : 's';
         $params[] = $isIdField ? (int) $value : $value;
     }
@@ -200,12 +207,16 @@ function build_master_query(string $key, string $where): string
                 "JOIN districts d ON fc.district_id = d.id " .
                 "LEFT JOIN block_panchayats bp ON fc.block_panchayat_id = bp.id " .
                 "JOIN local_bodies lb ON fc.local_body_id = lb.id {$where} ORDER BY fc.name";
+        case 'qualification_categories':
+            return "SELECT id, name FROM qualification_categories {$where} ORDER BY name";
         case 'academic_institutions':
-            return "SELECT ai.id, ai.name, d.name AS district_name, ai.education_category, ai.institution_type FROM academic_institutions ai " .
-                "JOIN districts d ON ai.district_id = d.id {$where} ORDER BY ai.name";
+            return "SELECT ai.id, ai.name, d.name AS district_name, qc.name AS qualification_category_name, ai.institution_type FROM academic_institutions ai " .
+                "JOIN districts d ON ai.district_id = d.id " .
+                "LEFT JOIN qualification_categories qc ON ai.qualification_category = qc.id {$where} ORDER BY ai.name";
         case 'education_courses':
-            return "SELECT ec.id, ec.name, d.name AS district_name, ec.education_category FROM education_courses ec " .
-                "JOIN districts d ON ec.district_id = d.id {$where} ORDER BY ec.name";
+            return "SELECT ec.id, ec.name, d.name AS district_name, qc.name AS qualification_category_name FROM education_courses ec " .
+                "JOIN districts d ON ec.district_id = d.id " .
+                "LEFT JOIN qualification_categories qc ON ec.qualification_category = qc.id {$where} ORDER BY ec.name";
         case 'cds_list':
             return "SELECT cds.id, cds.name, d.name AS district_name, lbt.name AS type_name FROM cds_list cds " .
                 "JOIN districts d ON cds.district_id = d.id " .
