@@ -39,6 +39,17 @@ CREATE TABLE IF NOT EXISTS job_stations (
     FOREIGN KEY (block_panchayat_id) REFERENCES block_panchayats(id)
 );
 
+CREATE TABLE IF NOT EXISTS facilitation_centers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    district_id INT NOT NULL,
+    block_panchayat_id INT NULL,
+    local_body_id INT NOT NULL,
+    FOREIGN KEY (district_id) REFERENCES districts(id),
+    FOREIGN KEY (block_panchayat_id) REFERENCES block_panchayats(id),
+    FOREIGN KEY (local_body_id) REFERENCES local_bodies(id)
+);
+
 CREATE TABLE IF NOT EXISTS academic_institutions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(200) NOT NULL,

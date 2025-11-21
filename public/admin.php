@@ -56,6 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = 'Job station added.';
                 }
                 break;
+            case 'create_facilitation_center':
+                $name = trim($_POST['name'] ?? '');
+                $district = (int) ($_POST['district_id'] ?? 0);
+                $block = (int) ($_POST['block_panchayat_id'] ?? 0);
+                $localBody = (int) ($_POST['local_body_id'] ?? 0);
+                if ($name && $district && $localBody) {
+                    $blockValue = $block ?: null;
+                    $stmt = $conn->prepare('INSERT INTO facilitation_centers (name, district_id, block_panchayat_id, local_body_id) VALUES (?, ?, ?, ?)');
+                    $stmt->bind_param('siii', $name, $district, $blockValue, $localBody);
+                    $stmt->execute();
+                    $message = 'Facilitation center added.';
+                }
+                break;
             case 'create_institution':
                 $name = trim($_POST['name'] ?? '');
                 $district = (int) ($_POST['district_id'] ?? 0);

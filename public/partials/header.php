@@ -23,9 +23,9 @@ require_once __DIR__ . '/../../src/auth.php';
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
                 <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="/master.php?type=local_bodies">Local Bodies</a></li>
-                <li class="nav-item"><a class="nav-link" href="/master.php?type=academic_institutions">Academic</a></li>
-                <li class="nav-item"><a class="nav-link" href="/master.php?type=education_courses">Courses</a></li>
+                <li class="nav-item"><a class="nav-link" href="/?group=Local+body">Local body</a></li>
+                <li class="nav-item"><a class="nav-link" href="/?group=Academic">Academic</a></li>
+                <li class="nav-item"><a class="nav-link" href="/?group=Kudumbasree">Kudumbasree</a></li>
                 <?php if (is_logged_in()): ?>
                     <li class="nav-item"><a class="nav-link" href="/admin.php">Admin</a></li>
                     <li class="nav-item"><a class="btn btn-outline-secondary ms-lg-2" href="/logout.php">Logout</a></li>
