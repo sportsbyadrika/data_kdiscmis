@@ -2,25 +2,24 @@
 
 require_once __DIR__ . '/db.php';
 
-function fetch_counts(mysqli $conn): array
+function fetch_counts(mysqli $conn, ?string $group = null): array
 {
-    $tables = [
-        'districts' => 'Districts',
-        'local_bodies' => 'Local Bodies',
-        'job_stations' => 'Job Stations',
-        'academic_institutions' => 'Academic Institutions',
-        'education_courses' => 'Education Courses/Trades',
-        'cds_list' => 'CDS',
-        'ads_list' => 'ADS',
-    ];
-
+    $definitions = master_definitions();
     $counts = [];
-    foreach ($tables as $table => $label) {
+    $normalizedGroup = $group ? strtolower($group) : null;
+
+    foreach ($definitions as $definition) {
+        if ($normalizedGroup && strtolower($definition['group']) !== $normalizedGroup) {
+            continue;
+        }
+
+        $table = $definition['table'];
         $result = $conn->query("SELECT COUNT(*) as total FROM {$table}");
         $counts[] = [
             'table' => $table,
-            'label' => $label,
+            'label' => $definition['title'],
             'count' => (int) $result->fetch_assoc()['total'],
+            'group' => $definition['group'],
         ];
     }
 
@@ -66,47 +65,82 @@ function master_definitions(): array
     return [
         'districts' => [
             'title' => 'Districts',
+            'group' => 'Local body',
             'table' => 'districts',
             'filters' => [],
             'columns' => ['name' => 'District'],
         ],
         'local_bodies' => [
             'title' => 'Local Bodies',
+            'group' => 'Local body',
             'table' => 'local_bodies',
             'filters' => ['district_id' => 'District', 'local_body_type_id' => 'Type'],
             'columns' => ['name' => 'Local Body', 'district_name' => 'District', 'type_name' => 'Type'],
         ],
         'job_stations' => [
             'title' => 'Job Stations',
+            'group' => 'Local body',
             'table' => 'job_stations',
             'filters' => ['district_id' => 'District', 'block_panchayat_id' => 'Block Panchayat'],
             'columns' => ['name' => 'Job Station', 'district_name' => 'District', 'block_panchayat_name' => 'Block Panchayat'],
         ],
+        'facilitation_centers' => [
+            'title' => 'Facilitation Centers',
+            'group' => 'Local body',
+            'table' => 'facilitation_centers',
+            'filters' => [
+                'district_id' => 'District',
+                'block_panchayat_id' => 'Block Panchayat',
+                'local_body_id' => 'Local Body',
+            ],
+            'columns' => [
+                'name' => 'Facilitation Center',
+                'district_name' => 'District',
+                'block_panchayat_name' => 'Block Panchayat',
+                'local_body_name' => 'Local Body',
+            ],
+        ],
         'academic_institutions' => [
             'title' => 'Academic Institutions',
+            'group' => 'Academic',
             'table' => 'academic_institutions',
             'filters' => ['district_id' => 'District', 'education_category' => 'Education Category', 'institution_type' => 'Institution Type'],
             'columns' => ['name' => 'Institution', 'district_name' => 'District', 'education_category' => 'Category', 'institution_type' => 'Type'],
         ],
         'education_courses' => [
             'title' => 'Education Courses/Trades',
+            'group' => 'Academic',
             'table' => 'education_courses',
             'filters' => ['district_id' => 'District', 'education_category' => 'Education Category'],
             'columns' => ['name' => 'Course/Trade', 'district_name' => 'District', 'education_category' => 'Category'],
         ],
         'cds_list' => [
             'title' => 'CDS',
+            'group' => 'Kudumbasree',
             'table' => 'cds_list',
             'filters' => ['district_id' => 'District', 'local_body_type_id' => 'Local Body Type'],
             'columns' => ['name' => 'CDS', 'district_name' => 'District', 'type_name' => 'Local Body Type'],
         ],
         'ads_list' => [
             'title' => 'ADS',
+            'group' => 'Kudumbasree',
             'table' => 'ads_list',
             'filters' => ['district_id' => 'District', 'local_body_type_id' => 'Local Body Type', 'local_body_id' => 'Local Body'],
             'columns' => ['name' => 'ADS', 'district_name' => 'District', 'type_name' => 'Local Body Type', 'local_body_name' => 'Local Body'],
         ],
     ];
+}
+
+function master_groups(): array
+{
+    $definitions = master_definitions();
+    $groups = [];
+
+    foreach ($definitions as $definition) {
+        $groups[$definition['group']] = true;
+    }
+
+    return array_keys($groups);
 }
 
 function fetch_master_rows(mysqli $conn, string $key, array $filters, string $search = ''): array
@@ -161,6 +195,11 @@ function build_master_query(string $key, string $where): string
             return "SELECT js.id, js.name, d.name AS district_name, bp.name AS block_panchayat_name FROM job_stations js " .
                 "JOIN districts d ON js.district_id = d.id " .
                 "LEFT JOIN block_panchayats bp ON js.block_panchayat_id = bp.id {$where} ORDER BY js.name";
+        case 'facilitation_centers':
+            return "SELECT fc.id, fc.name, d.name AS district_name, bp.name AS block_panchayat_name, lb.name AS local_body_name FROM facilitation_centers fc " .
+                "JOIN districts d ON fc.district_id = d.id " .
+                "LEFT JOIN block_panchayats bp ON fc.block_panchayat_id = bp.id " .
+                "JOIN local_bodies lb ON fc.local_body_id = lb.id {$where} ORDER BY fc.name";
         case 'academic_institutions':
             return "SELECT ai.id, ai.name, d.name AS district_name, ai.education_category, ai.institution_type FROM academic_institutions ai " .
                 "JOIN districts d ON ai.district_id = d.id {$where} ORDER BY ai.name";

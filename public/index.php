@@ -3,13 +3,19 @@ require_once __DIR__ . '/../src/masters.php';
 require_once __DIR__ . '/../src/auth.php';
 
 $conn = db_connect();
-$counts = fetch_counts($conn);
+$groups = master_groups();
+$requestedGroup = $_GET['group'] ?? '';
+$activeGroup = in_array($requestedGroup, $groups, true) ? $requestedGroup : '';
+$counts = fetch_counts($conn, $activeGroup ?: null);
 include __DIR__ . '/partials/header.php';
 ?>
 <div class="row align-items-center mb-4">
     <div class="col">
         <h1 class="h3 mb-0">Master Directory</h1>
-        <p class="text-muted">Discover public master data and manage them with secure administrator access.</p>
+        <p class="text-muted mb-1">Discover public master data and manage them with secure administrator access.</p>
+        <?php if ($activeGroup): ?>
+            <span class="badge bg-light text-primary border">Showing <?php echo htmlspecialchars($activeGroup); ?> masters</span>
+        <?php endif; ?>
     </div>
     <?php if (is_admin()): ?>
         <div class="col-auto">
