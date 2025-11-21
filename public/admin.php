@@ -49,9 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $name = trim($_POST['name'] ?? '');
                 $district = (int) ($_POST['district_id'] ?? 0);
                 $block = (int) ($_POST['block_panchayat_id'] ?? 0);
+                $latitude = (float) ($_POST['latitude'] ?? 0);
+                $longitude = (float) ($_POST['longitude'] ?? 0);
                 if ($name && $district) {
-                    $stmt = $conn->prepare('INSERT INTO job_stations (name, district_id, block_panchayat_id) VALUES (?, ?, ?)');
-                    $stmt->bind_param('sii', $name, $district, $block ?: null);
+                    $stmt = $conn->prepare('INSERT INTO job_stations (name, district_id, latitude, longitude, block_panchayat_id) VALUES (?, ?, ?, ?, ?)');
+                    $stmt->bind_param('siddi', $name, $district, $latitude, $longitude, $block ?: null);
                     $stmt->execute();
                     $message = 'Job station added.';
                 }
@@ -61,10 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $district = (int) ($_POST['district_id'] ?? 0);
                 $block = (int) ($_POST['block_panchayat_id'] ?? 0);
                 $localBody = (int) ($_POST['local_body_id'] ?? 0);
+                $latitude = (float) ($_POST['latitude'] ?? 0);
+                $longitude = (float) ($_POST['longitude'] ?? 0);
                 if ($name && $district && $localBody) {
                     $blockValue = $block ?: null;
-                    $stmt = $conn->prepare('INSERT INTO facilitation_centers (name, district_id, block_panchayat_id, local_body_id) VALUES (?, ?, ?, ?)');
-                    $stmt->bind_param('siii', $name, $district, $blockValue, $localBody);
+                    $stmt = $conn->prepare('INSERT INTO facilitation_centers (name, district_id, latitude, longitude, block_panchayat_id, local_body_id) VALUES (?, ?, ?, ?, ?, ?)');
+                    $stmt->bind_param('siddii', $name, $district, $latitude, $longitude, $blockValue, $localBody);
                     $stmt->execute();
                     $message = 'Facilitation center added.';
                 }
@@ -77,10 +81,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $district = (int) ($_POST['district_id'] ?? 0);
                 $qualificationCategory = (int) ($_POST['qualification_category'] ?? 0);
                 $type = trim($_POST['institution_type'] ?? '');
+                $latitude = (float) ($_POST['latitude'] ?? 0);
+                $longitude = (float) ($_POST['longitude'] ?? 0);
                 if ($name && $district) {
                     $qualificationValue = $qualificationCategory ?: null;
-                    $stmt = $conn->prepare('INSERT INTO academic_institutions (name, district_id, qualification_category, institution_type) VALUES (?, ?, ?, ?)');
-                    $stmt->bind_param('siis', $name, $district, $qualificationValue, $type);
+                    $stmt = $conn->prepare('INSERT INTO academic_institutions (name, district_id, latitude, longitude, qualification_category, institution_type) VALUES (?, ?, ?, ?, ?, ?)');
+                    $stmt->bind_param('siddis', $name, $district, $latitude, $longitude, $qualificationValue, $type);
                     $stmt->execute();
                     $message = 'Academic institution added.';
                 }

@@ -82,7 +82,13 @@ function master_definitions(): array
             'group' => 'Local body',
             'table' => 'job_stations',
             'filters' => ['district_id' => 'District', 'block_panchayat_id' => 'Block Panchayat'],
-            'columns' => ['name' => 'Job Station', 'district_name' => 'District', 'block_panchayat_name' => 'Block Panchayat'],
+            'columns' => [
+                'name' => 'Job Station',
+                'district_name' => 'District',
+                'block_panchayat_name' => 'Block Panchayat',
+                'latitude' => 'Latitude',
+                'longitude' => 'Longitude',
+            ],
         ],
         'facilitation_centers' => [
             'title' => 'Facilitation Centers',
@@ -98,6 +104,8 @@ function master_definitions(): array
                 'district_name' => 'District',
                 'block_panchayat_name' => 'Block Panchayat',
                 'local_body_name' => 'Local Body',
+                'latitude' => 'Latitude',
+                'longitude' => 'Longitude',
             ],
         ],
         'qualification_categories' => [
@@ -112,7 +120,14 @@ function master_definitions(): array
             'group' => 'Academic',
             'table' => 'academic_institutions',
             'filters' => ['district_id' => 'District', 'qualification_category' => 'Qualification Category', 'institution_type' => 'Institution Type'],
-            'columns' => ['name' => 'Institution', 'district_name' => 'District', 'qualification_category_name' => 'Qualification Category', 'institution_type' => 'Type'],
+            'columns' => [
+                'name' => 'Institution',
+                'district_name' => 'District',
+                'qualification_category_name' => 'Qualification Category',
+                'institution_type' => 'Type',
+                'latitude' => 'Latitude',
+                'longitude' => 'Longitude',
+            ],
         ],
         'education_courses' => [
             'title' => 'Education Courses/Trades',
@@ -199,18 +214,18 @@ function build_master_query(string $key, string $where): string
                 "JOIN districts d ON lb.district_id = d.id " .
                 "JOIN local_body_types lbt ON lb.local_body_type_id = lbt.id {$where} ORDER BY lb.name";
         case 'job_stations':
-            return "SELECT js.id, js.name, d.name AS district_name, bp.name AS block_panchayat_name FROM job_stations js " .
+            return "SELECT js.id, js.name, js.latitude, js.longitude, d.name AS district_name, bp.name AS block_panchayat_name FROM job_stations js " .
                 "JOIN districts d ON js.district_id = d.id " .
                 "LEFT JOIN block_panchayats bp ON js.block_panchayat_id = bp.id {$where} ORDER BY js.name";
         case 'facilitation_centers':
-            return "SELECT fc.id, fc.name, d.name AS district_name, bp.name AS block_panchayat_name, lb.name AS local_body_name FROM facilitation_centers fc " .
+            return "SELECT fc.id, fc.name, fc.latitude, fc.longitude, d.name AS district_name, bp.name AS block_panchayat_name, lb.name AS local_body_name FROM facilitation_centers fc " .
                 "JOIN districts d ON fc.district_id = d.id " .
                 "LEFT JOIN block_panchayats bp ON fc.block_panchayat_id = bp.id " .
                 "JOIN local_bodies lb ON fc.local_body_id = lb.id {$where} ORDER BY fc.name";
         case 'qualification_categories':
             return "SELECT id, name FROM qualification_categories {$where} ORDER BY name";
         case 'academic_institutions':
-            return "SELECT ai.id, ai.name, d.name AS district_name, qc.name AS qualification_category_name, ai.institution_type FROM academic_institutions ai " .
+            return "SELECT ai.id, ai.name, ai.latitude, ai.longitude, d.name AS district_name, qc.name AS qualification_category_name, ai.institution_type FROM academic_institutions ai " .
                 "JOIN districts d ON ai.district_id = d.id " .
                 "LEFT JOIN qualification_categories qc ON ai.qualification_category = qc.id {$where} ORDER BY ai.name";
         case 'education_courses':
