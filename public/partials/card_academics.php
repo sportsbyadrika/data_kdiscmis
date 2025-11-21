@@ -30,6 +30,14 @@
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="col-md-3">
+                <label class="form-label">Latitude</label>
+                <input type="number" name="latitude" class="form-control" step="0.000001" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Longitude</label>
+                <input type="number" name="longitude" class="form-control" step="0.000001" required>
+            </div>
             <div class="col-md-6">
                 <label class="form-label">Qualification Category</label>
                 <select name="qualification_category" class="form-select">
