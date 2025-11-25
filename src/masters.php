@@ -90,6 +90,21 @@ function master_definitions(): array
                 'longitude' => 'Longitude',
             ],
         ],
+        'sdpk_centers' => [
+            'title' => 'SDPK Centers',
+            'group' => 'Local body',
+            'table' => 'sdpk_centers',
+            'filters' => ['district_id' => 'District'],
+            'columns' => [
+                'code' => 'Code',
+                'name' => 'Center Name',
+                'address' => 'Address',
+                'district_name' => 'District',
+                'latitude' => 'Latitude',
+                'longitude' => 'Longitude',
+                'active_status_label' => 'Active Status',
+            ],
+        ],
         'facilitation_centers' => [
             'title' => 'Facilitation Centers',
             'group' => 'Local body',
@@ -222,6 +237,10 @@ function build_master_query(string $key, string $where): string
                 "JOIN districts d ON fc.district_id = d.id " .
                 "LEFT JOIN block_panchayats bp ON fc.block_panchayat_id = bp.id " .
                 "JOIN local_bodies lb ON fc.local_body_id = lb.id {$where} ORDER BY fc.name";
+        case 'sdpk_centers':
+            return "SELECT sc.id, sc.code, sc.name, sc.address, sc.latitude, sc.longitude, sc.active_status, " .
+                "CASE WHEN sc.active_status = 1 THEN 'Active' ELSE 'Inactive' END AS active_status_label, d.name AS district_name " .
+                "FROM sdpk_centers sc JOIN districts d ON sc.district_id = d.id {$where} ORDER BY sc.name";
         case 'qualification_categories':
             return "SELECT id, name FROM qualification_categories {$where} ORDER BY name";
         case 'academic_institutions':

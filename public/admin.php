@@ -126,6 +126,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = 'ADS entry added.';
                 }
                 break;
+            case 'create_sdpk_center':
+                $code = trim($_POST['code'] ?? '');
+                $name = trim($_POST['name'] ?? '');
+                $address = trim($_POST['address'] ?? '');
+                $district = (int) ($_POST['district_id'] ?? 0);
+                $latitude = (float) ($_POST['latitude'] ?? 0);
+                $longitude = (float) ($_POST['longitude'] ?? 0);
+                $activeStatus = ($_POST['active_status'] ?? '1') === '1' ? 1 : 0;
+
+                if ($code && $name && $address && $district) {
+                    $stmt = $conn->prepare('INSERT INTO sdpk_centers (code, name, address, district_id, latitude, longitude, active_status) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                    $stmt->bind_param('sssiddi', $code, $name, $address, $district, $latitude, $longitude, $activeStatus);
+                    $stmt->execute();
+                    $message = 'SDPK center added.';
+                }
+                break;
         }
     }
 }
@@ -152,6 +168,7 @@ include __DIR__ . '/partials/header.php';
     </div>
     <div class="col-lg-6">
         <?php include __DIR__ . '/partials/card_jobs.php'; ?>
+        <?php include __DIR__ . '/partials/card_sdpk.php'; ?>
         <?php include __DIR__ . '/partials/card_academics.php'; ?>
         <?php include __DIR__ . '/partials/card_cds_ads.php'; ?>
     </div>
