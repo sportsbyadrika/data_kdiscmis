@@ -25,6 +25,7 @@ A secure PHP/MySQL application that exposes public master data (districts, local
 - Districts
 - Local bodies (corporations, municipalities, grama/block/district panchayats)
 - Job stations (district/block-wise)
+- SDPK centers (district-wise)
 - Academic institutions (district, category, type)
 - Education courses/trades (district, category)
 - CDS (district, local body type)

@@ -100,6 +100,18 @@ CREATE TABLE IF NOT EXISTS ads_list (
     FOREIGN KEY (local_body_id) REFERENCES local_bodies(id)
 );
 
+CREATE TABLE IF NOT EXISTS sdpk_centers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(200) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    district_id INT NOT NULL,
+    latitude DECIMAL(10, 6) NOT NULL,
+    longitude DECIMAL(10, 6) NOT NULL,
+    active_status TINYINT(1) NOT NULL DEFAULT 1,
+    FOREIGN KEY (district_id) REFERENCES districts(id)
+);
+
 INSERT INTO users (username, password_hash, role)
 VALUES ('admin', '$2y$10$vvYhCcaDKGStkW2iULv9Ku0r6MQlQLd0ArwdlS.gY91cgs5leYeYm', 'admin')
 ON DUPLICATE KEY UPDATE username = username;
