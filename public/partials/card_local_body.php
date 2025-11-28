@@ -17,7 +17,15 @@
         <form class="row g-2" method="post">
             <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
             <input type="hidden" name="action" value="create_local_body">
-            <div class="col-12">
+            <div class="col-md-6">
+                <label class="form-label">LB Code</label>
+                <input type="text" name="lb_code" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Block LB Code</label>
+                <input type="text" name="block_lb_code" class="form-control" placeholder="Optional">
+            </div>
+            <div class="col-md-6">
                 <label class="form-label">Local Body Name</label>
                 <input type="text" name="name" class="form-control" required>
             </div>
