@@ -150,6 +150,17 @@ function master_definitions(): array
                 'longitude' => 'Longitude',
             ],
         ],
+        'academic_authorities' => [
+            'title' => 'Academic Authorities',
+            'group' => 'Academic',
+            'table' => 'academic_authorities',
+            'filters' => [],
+            'columns' => [
+                'code' => 'Code',
+                'name' => 'Authority Name',
+                'authority_type' => 'Authority Type',
+            ],
+        ],
         'education_courses' => [
             'title' => 'Education Courses/Trades',
             'group' => 'Academic',
@@ -257,6 +268,8 @@ function build_master_query(string $key, string $where): string
             return "SELECT ec.id, ec.name, d.name AS district_name, qc.name AS qualification_category_name FROM education_courses ec " .
                 "JOIN districts d ON ec.district_id = d.id " .
                 "LEFT JOIN qualification_categories qc ON ec.qualification_category = qc.id {$where} ORDER BY ec.name";
+        case 'academic_authorities':
+            return "SELECT id, code, name, authority_type FROM academic_authorities {$where} ORDER BY name";
         case 'cds_list':
             return "SELECT cds.id, cds.name, d.name AS district_name, lbt.name AS type_name FROM cds_list cds " .
                 "JOIN districts d ON cds.district_id = d.id " .

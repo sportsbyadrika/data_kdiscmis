@@ -82,6 +82,13 @@ CREATE TABLE IF NOT EXISTS education_courses (
     FOREIGN KEY (qualification_category) REFERENCES qualification_categories(id)
 );
 
+CREATE TABLE IF NOT EXISTS academic_authorities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(200) NOT NULL,
+    authority_type VARCHAR(120) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS cds_list (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(200) NOT NULL,

@@ -79,6 +79,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'create_qualification_category':
                 create_simple($conn, 'qualification_categories', $_POST['name'] ?? '', $message);
                 break;
+            case 'create_academic_authority':
+                $code = trim($_POST['code'] ?? '');
+                $name = trim($_POST['name'] ?? '');
+                $authorityType = trim($_POST['authority_type'] ?? '');
+                if ($code !== '' && $name !== '' && $authorityType !== '') {
+                    $stmt = $conn->prepare('INSERT INTO academic_authorities (code, name, authority_type) VALUES (?, ?, ?)');
+                    $stmt->bind_param('sss', $code, $name, $authorityType);
+                    $stmt->execute();
+                    $message = 'Academic authority added.';
+                }
+                break;
             case 'create_institution':
                 $name = trim($_POST['name'] ?? '');
                 $district = (int) ($_POST['district_id'] ?? 0);

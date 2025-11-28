@@ -13,6 +13,27 @@
             </div>
         </form>
         <hr>
+        <h2 class="h6 mb-3">Academic Authorities</h2>
+        <form class="row g-2 mb-3" method="post">
+            <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
+            <input type="hidden" name="action" value="create_academic_authority">
+            <div class="col-md-4">
+                <label class="form-label">Authority Code</label>
+                <input type="text" name="code" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Authority Name</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Authority Type</label>
+                <input type="text" name="authority_type" class="form-control" placeholder="Academic" required>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-primary" type="submit">Add Authority</button>
+            </div>
+        </form>
+        <hr>
         <h2 class="h6 mb-3">Academic Institutions</h2>
         <form class="row g-2" method="post">
             <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
