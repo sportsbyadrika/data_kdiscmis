@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS block_panchayats (
 CREATE TABLE IF NOT EXISTS local_bodies (
     id INT AUTO_INCREMENT PRIMARY KEY,
     lb_code VARCHAR(50) NOT NULL UNIQUE,
+    block_lb_code VARCHAR(50) DEFAULT NULL,
     name VARCHAR(200) NOT NULL,
     district_id INT NOT NULL,
     local_body_type_id INT NOT NULL,
