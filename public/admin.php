@@ -35,12 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 create_simple($conn, 'block_panchayats', $_POST['name'] ?? '', $message);
                 break;
             case 'create_local_body':
+                $lbCode = trim($_POST['lb_code'] ?? '');
                 $name = trim($_POST['name'] ?? '');
                 $district = (int) ($_POST['district_id'] ?? 0);
                 $type = (int) ($_POST['local_body_type_id'] ?? 0);
-                if ($name && $district && $type) {
-                    $stmt = $conn->prepare('INSERT INTO local_bodies (name, district_id, local_body_type_id) VALUES (?, ?, ?)');
-                    $stmt->bind_param('sii', $name, $district, $type);
+                if ($lbCode && $name && $district && $type) {
+                    $stmt = $conn->prepare('INSERT INTO local_bodies (lb_code, name, district_id, local_body_type_id) VALUES (?, ?, ?, ?)');
+                    $stmt->bind_param('ssii', $lbCode, $name, $district, $type);
                     $stmt->execute();
                     $message = 'Local body added.';
                 }
