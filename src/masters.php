@@ -75,7 +75,12 @@ function master_definitions(): array
             'group' => 'Local body',
             'table' => 'local_bodies',
             'filters' => ['district_id' => 'District', 'local_body_type_id' => 'Type'],
-            'columns' => ['name' => 'Local Body', 'district_name' => 'District', 'type_name' => 'Type'],
+            'columns' => [
+                'lb_code' => 'LB Code',
+                'name' => 'Local Body',
+                'district_name' => 'District',
+                'type_name' => 'Type',
+            ],
         ],
         'job_stations' => [
             'title' => 'Job Stations',
@@ -225,7 +230,7 @@ function build_master_query(string $key, string $where): string
 {
     switch ($key) {
         case 'local_bodies':
-            return "SELECT lb.id, lb.name, d.name AS district_name, lbt.name AS type_name FROM local_bodies lb " .
+            return "SELECT lb.id, lb.lb_code, lb.name, d.name AS district_name, lbt.name AS type_name FROM local_bodies lb " .
                 "JOIN districts d ON lb.district_id = d.id " .
                 "JOIN local_body_types lbt ON lb.local_body_type_id = lbt.id {$where} ORDER BY lb.name";
         case 'job_stations':
