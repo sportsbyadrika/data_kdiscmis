@@ -121,6 +121,13 @@ CREATE TABLE IF NOT EXISTS sdpk_centers (
     FOREIGN KEY (district_id) REFERENCES districts(id)
 );
 
+CREATE TABLE IF NOT EXISTS blog_posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    content_html MEDIUMTEXT NOT NULL,
+    published_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 INSERT INTO users (username, password_hash, role)
 VALUES ('admin', '$2y$10$vvYhCcaDKGStkW2iULv9Ku0r6MQlQLd0ArwdlS.gY91cgs5leYeYm', 'admin')
 ON DUPLICATE KEY UPDATE username = username;
