@@ -3,6 +3,11 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/env.php';
 
+const ROLE_SUPER_ADMIN = 'super_admin';
+const ROLE_STATE_USER = 'state_user';
+const ROLE_DISTRICT_USER = 'district_user';
+const ROLE_LOCALBODY_USER = 'localbody_user';
+
 function start_session_once(): void
 {
     if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -21,27 +26,48 @@ function is_logged_in(): bool
     return current_user() !== null;
 }
 
-function is_admin(): bool
+function has_role(string $role): bool
 {
     $user = current_user();
-    return $user !== null && $user['role'] === 'admin';
+    return $user !== null && $user['role'] === $role;
 }
 
-function login(string $username, string $password): bool
+function is_admin(): bool
+{
+    return has_role(ROLE_SUPER_ADMIN);
+}
+
+function require_auth(array $roles = []): void
+{
+    $user = current_user();
+    $isAuthenticated = $user !== null && (empty($roles) || in_array($user['role'], $roles, true));
+
+    if (!$isAuthenticated) {
+        header('Location: /login.php');
+        exit();
+    }
+}
+
+function login(string $mobile, string $password): bool
 {
     $conn = db_connect();
-    $stmt = $conn->prepare('SELECT id, username, password_hash, role FROM users WHERE username = ? LIMIT 1');
-    $stmt->bind_param('s', $username);
+    $stmt = $conn->prepare(
+        'SELECT id, name, email, mobile, password_hash, role, district_id, status FROM users WHERE mobile = ? LIMIT 1'
+    );
+    $stmt->bind_param('s', $mobile);
     $stmt->execute();
     $result = $stmt->get_result();
     $user = $result->fetch_assoc();
 
-    if ($user && password_verify($password, $user['password_hash'])) {
+    if ($user && $user['status'] === 'active' && password_verify($password, $user['password_hash'])) {
         start_session_once();
         $_SESSION['user'] = [
             'id' => (int) $user['id'],
-            'username' => $user['username'],
+            'name' => $user['name'],
+            'email' => $user['email'],
+            'mobile' => $user['mobile'],
             'role' => $user['role'],
+            'district_id' => $user['district_id'] !== null ? (int) $user['district_id'] : null,
         ];
         return true;
     }
@@ -54,14 +80,6 @@ function logout(): void
     start_session_once();
     $_SESSION = [];
     session_destroy();
-}
-
-function require_admin(): void
-{
-    if (!is_admin()) {
-        header('Location: /login.php');
-        exit();
-    }
 }
 
 function csrf_token(): string
