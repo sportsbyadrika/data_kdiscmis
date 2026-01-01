@@ -1,14 +1,21 @@
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    role ENUM('admin','editor') NOT NULL DEFAULT 'editor',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE IF NOT EXISTS districts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(180) NOT NULL,
+    mobile VARCHAR(20) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('super_admin','state_user','district_user','localbody_user') NOT NULL DEFAULT 'localbody_user',
+    district_id INT NULL,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_users_created_by FOREIGN KEY (created_by) REFERENCES users(id),
+    CONSTRAINT fk_users_district FOREIGN KEY (district_id) REFERENCES districts(id)
 );
 
 CREATE TABLE IF NOT EXISTS qualification_categories (
@@ -128,6 +135,13 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     published_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO users (username, password_hash, role)
-VALUES ('admin', '$2y$10$vvYhCcaDKGStkW2iULv9Ku0r6MQlQLd0ArwdlS.gY91cgs5leYeYm', 'admin')
-ON DUPLICATE KEY UPDATE username = username;
+INSERT INTO users (name, email, mobile, password_hash, role, status)
+VALUES (
+    'Super Admin',
+    'superadmin@example.com',
+    '9999999999',
+    '$2y$12$I8ll1x/NL2kw.jRWyLt2Wu5C.9reb9.e4uYKsnVf7ZZmNbJVlQ4sm',
+    'super_admin',
+    'active'
+)
+ON DUPLICATE KEY UPDATE mobile = mobile;

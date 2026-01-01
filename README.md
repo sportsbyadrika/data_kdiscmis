@@ -33,5 +33,6 @@ A secure PHP/MySQL application that exposes public master data (districts, local
 
 ## Notes
 
-- The schema seeds an `admin` user with password `password123` (update after first login).
+- The schema seeds a `Super Admin` user with mobile `9999999999` and password `password123` (update after first login).
+- Mobile numbers act as usernames for all user levels.
 - All SQL statements use prepared queries to avoid injection, and sessions are required for administration.

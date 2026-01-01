@@ -19,9 +19,9 @@ include __DIR__ . '/partials/header.php';
             <span class="badge bg-light text-primary border">Showing <?php echo htmlspecialchars($activeGroup); ?> masters</span>
         <?php endif; ?>
     </div>
-    <?php if (is_admin()): ?>
+    <?php if (is_logged_in()): ?>
         <div class="col-auto">
-            <a class="btn btn-outline-primary" href="/admin.php">Go to Admin</a>
+            <a class="btn btn-outline-primary" href="/admin.php">Go to Dashboard</a>
         </div>
     <?php endif; ?>
 </div>
