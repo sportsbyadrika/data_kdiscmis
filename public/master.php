@@ -193,10 +193,32 @@ include __DIR__ . '/partials/header.php';
                     scaledSize: new google.maps.Size(32, 32),
                 }
                 : null;
+            const buildSvgIcon = (svg) => `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
             const sdpkPhaseIcons = {
-                1: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-                2: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
-                3: 'https://maps.google.com/mapfiles/ms/icons/orange-dot.png',
+                1: {
+                    url: buildSvgIcon(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+                        '<circle cx="32" cy="32" r="22" fill="#8B0000" stroke="#2F0000" stroke-width="4"/>' +
+                        '</svg>'
+                    ),
+                    scaledSize: new google.maps.Size(48, 48),
+                },
+                2: {
+                    url: buildSvgIcon(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+                        '<rect x="14" y="14" width="36" height="36" rx="6" fill="#1E7F1E" stroke="#0E3F0E" stroke-width="4"/>' +
+                        '</svg>'
+                    ),
+                    scaledSize: new google.maps.Size(48, 48),
+                },
+                3: {
+                    url: buildSvgIcon(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+                        '<polygon points="32,10 54,32 32,54 10,32" fill="#003366" stroke="#001633" stroke-width="4"/>' +
+                        '</svg>'
+                    ),
+                    scaledSize: new google.maps.Size(48, 48),
+                },
             };
 
             masterLocations.forEach((location) => {
