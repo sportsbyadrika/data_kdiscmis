@@ -193,32 +193,20 @@ include __DIR__ . '/partials/header.php';
                     scaledSize: new google.maps.Size(32, 32),
                 }
                 : null;
-            const buildSvgIcon = (svg) => `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+            const buildInstitutionIcon = (color) => {
+                const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">' +
+                    `<path fill="${color}" d="M32 2c-10 0-18 8-18 18 0 13.2 18 42 18 42s18-28.8 18-42C50 10 42 2 32 2z"/>` +
+                    '<path fill="#fff" d="M32 14 14 22l18 8 18-8-18-8zm-10 12v10h4V28h-4zm8 0v10h8V26h-8zm12 0v10h4V26h-4z"/>' +
+                    '</svg>';
+                return {
+                    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+                    scaledSize: new google.maps.Size(56, 56),
+                };
+            };
             const sdpkPhaseIcons = {
-                1: {
-                    url: buildSvgIcon(
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
-                        '<circle cx="32" cy="32" r="22" fill="#8B0000" stroke="#2F0000" stroke-width="4"/>' +
-                        '</svg>'
-                    ),
-                    scaledSize: new google.maps.Size(48, 48),
-                },
-                2: {
-                    url: buildSvgIcon(
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
-                        '<rect x="14" y="14" width="36" height="36" rx="6" fill="#1E7F1E" stroke="#0E3F0E" stroke-width="4"/>' +
-                        '</svg>'
-                    ),
-                    scaledSize: new google.maps.Size(48, 48),
-                },
-                3: {
-                    url: buildSvgIcon(
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
-                        '<polygon points="32,10 54,32 32,54 10,32" fill="#003366" stroke="#001633" stroke-width="4"/>' +
-                        '</svg>'
-                    ),
-                    scaledSize: new google.maps.Size(48, 48),
-                },
+                1: buildInstitutionIcon('#c0392b'),
+                2: buildInstitutionIcon('#198754'),
+                3: buildInstitutionIcon('#0d6efd'),
             };
 
             masterLocations.forEach((location) => {
