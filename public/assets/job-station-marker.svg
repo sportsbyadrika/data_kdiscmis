@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Job station marker">
+  <path fill="#fd7e14" d="M32 2c-10 0-18 8-18 18 0 13.2 18 42 18 42s18-28.8 18-42C50 10 42 2 32 2z"/>
+  <path fill="#fff" d="M22 24h20a2 2 0 0 1 2 2v12H20V26a2 2 0 0 1 2-2zm6-6h8a2 2 0 0 1 2 2v2H26v-2a2 2 0 0 1 2-2z"/>
+</svg>

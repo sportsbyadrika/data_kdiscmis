@@ -123,6 +123,15 @@ include __DIR__ . '/partials/header.php';
 </div>
 <?php if ($view === 'map' && $hasCoordinates && !empty($mapRows)): ?>
     <?php $mapApiKey = env('GOOGLE_MAPS_API_KEY', ''); ?>
+    <?php
+    $markerIcons = [
+        'academic_authorities' => '/assets/university-marker.svg',
+        'academic_institutions' => '/assets/academic-institution-marker.svg',
+        'job_stations' => '/assets/job-station-marker.svg',
+        'sdpk_centers' => '/assets/sdpk-center-marker.svg',
+    ];
+    $markerIconUrl = $markerIcons[$type] ?? null;
+    ?>
     <script>
         const masterLocations = <?php echo json_encode(array_map(
             static fn(array $row): array => [
@@ -132,18 +141,19 @@ include __DIR__ . '/partials/header.php';
                 'details' => implode(' • ', array_filter([
                     $row['district_name'] ?? null,
                     $row['block_panchayat_name'] ?? null,
-                    $row['local_body_name'] ?? null,
+                    $row['local_body_name'] ? 'Localbody: ' . $row['local_body_name'] : null,
                     $row['qualification_category_name'] ?? null,
                     $row['institution_type'] ?? null,
                     $row['authority_type'] ?? null,
                     $row['sub_category'] ?? null,
-                    $row['address'] ?? null,
-                    $row['website'] ?? null,
+                    $row['address'] ? 'Address: ' . $row['address'] : null,
+                    $row['website'] ? 'Website: ' . $row['website'] : null,
                     $row['active_status_label'] ?? null,
                 ])),
             ],
             $mapRows
         ), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
+        const masterMarkerIconUrl = <?php echo json_encode($markerIconUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
 
         function initMasterMap() {
             const mapElement = document.getElementById('master-map');
@@ -164,6 +174,13 @@ include __DIR__ . '/partials/header.php';
                 mapTypeControl: false,
             });
 
+            const markerIcon = masterMarkerIconUrl
+                ? {
+                    url: masterMarkerIconUrl,
+                    scaledSize: new google.maps.Size(32, 32),
+                }
+                : null;
+
             masterLocations.forEach((location) => {
                 if (typeof location.latitude !== 'number' || Number.isNaN(location.latitude) ||
                     typeof location.longitude !== 'number' || Number.isNaN(location.longitude)) {
@@ -174,6 +191,7 @@ include __DIR__ . '/partials/header.php';
                     position: {lat: location.latitude, lng: location.longitude},
                     map,
                     title: location.name,
+                    icon: markerIcon ?? undefined,
                 });
 
                 if (location.details) {
