@@ -160,14 +160,15 @@ function master_definitions(): array
                 'code' => 'Code',
                 'name' => 'Authority Name',
                 'authority_type' => 'Authority Type',
-                'district_id' => 'District ID',
-                'local_body_code' => 'Localbody Code',
+                'district_name' => 'District',
+                'local_body_name' => 'Local Body',
                 'website' => 'Website',
                 'address' => 'Address',
                 'latitude' => 'Latitude',
                 'longitude' => 'Longitude',
                 'year_established' => 'Year of Establishment',
                 'sub_category' => 'Sub Category',
+                'local_body_code' => 'Localbody Code',
             ],
         ],
         'education_courses' => [
@@ -278,8 +279,11 @@ function build_master_query(string $key, string $where): string
                 "JOIN districts d ON ec.district_id = d.id " .
                 "LEFT JOIN qualification_categories qc ON ec.qualification_category = qc.id {$where} ORDER BY ec.name";
         case 'academic_authorities':
-            return "SELECT id, code, name, authority_type, district_id, local_body_code, website, address, latitude, longitude, year_established, sub_category " .
-                "FROM academic_authorities {$where} ORDER BY name";
+            return "SELECT aa.id, aa.code, aa.name, aa.authority_type, d.name AS district_name, lb.name AS local_body_name, aa.local_body_code, " .
+                "aa.website, aa.address, aa.latitude, aa.longitude, aa.year_established, aa.sub_category " .
+                "FROM academic_authorities aa " .
+                "JOIN districts d ON aa.district_id = d.id " .
+                "LEFT JOIN local_bodies lb ON aa.local_body_code = lb.lb_code {$where} ORDER BY aa.name";
         case 'cds_list':
             return "SELECT cds.id, cds.name, d.name AS district_name, lbt.name AS type_name FROM cds_list cds " .
                 "JOIN districts d ON cds.district_id = d.id " .
