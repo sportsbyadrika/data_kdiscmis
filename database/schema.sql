@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS sdpk_centers (
     district_id INT NOT NULL,
     latitude DECIMAL(10, 6) NOT NULL,
     longitude DECIMAL(10, 6) NOT NULL,
+    phase TINYINT(2) NOT NULL DEFAULT 1,
     active_status TINYINT(1) NOT NULL DEFAULT 1,
     FOREIGN KEY (district_id) REFERENCES districts(id)
 );
