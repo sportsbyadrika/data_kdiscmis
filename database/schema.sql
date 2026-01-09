@@ -93,7 +93,16 @@ CREATE TABLE IF NOT EXISTS academic_authorities (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
-    authority_type VARCHAR(120) NOT NULL
+    authority_type VARCHAR(120) NOT NULL,
+    district_id INT NOT NULL,
+    local_body_code VARCHAR(80) NULL,
+    website VARCHAR(255) NULL,
+    address VARCHAR(255) NULL,
+    latitude DECIMAL(10, 6) NULL,
+    longitude DECIMAL(10, 6) NULL,
+    year_established INT NULL,
+    sub_category VARCHAR(120) NULL,
+    FOREIGN KEY (district_id) REFERENCES districts(id)
 );
 
 CREATE TABLE IF NOT EXISTS cds_list (

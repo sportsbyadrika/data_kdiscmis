@@ -33,6 +33,7 @@ function fetch_filter_options(mysqli $conn): array
         'local_body_types' => fetch_named($conn, 'local_body_types'),
         'qualification_categories' => fetch_named($conn, 'qualification_categories'),
         'institution_types' => fetch_distinct($conn, 'academic_institutions', 'institution_type'),
+        'authority_types' => fetch_distinct($conn, 'academic_authorities', 'authority_type'),
         'local_bodies' => fetch_named($conn, 'local_bodies'),
         'block_panchayats' => fetch_named($conn, 'block_panchayats'),
     ];
@@ -154,11 +155,19 @@ function master_definitions(): array
             'title' => 'Academic Authorities',
             'group' => 'Academic',
             'table' => 'academic_authorities',
-            'filters' => [],
+            'filters' => ['district_id' => 'District', 'authority_type' => 'Type (Category)'],
             'columns' => [
                 'code' => 'Code',
                 'name' => 'Authority Name',
                 'authority_type' => 'Authority Type',
+                'district_id' => 'District ID',
+                'local_body_code' => 'Localbody Code',
+                'website' => 'Website',
+                'address' => 'Address',
+                'latitude' => 'Latitude',
+                'longitude' => 'Longitude',
+                'year_established' => 'Year of Establishment',
+                'sub_category' => 'Sub Category',
             ],
         ],
         'education_courses' => [
@@ -269,7 +278,8 @@ function build_master_query(string $key, string $where): string
                 "JOIN districts d ON ec.district_id = d.id " .
                 "LEFT JOIN qualification_categories qc ON ec.qualification_category = qc.id {$where} ORDER BY ec.name";
         case 'academic_authorities':
-            return "SELECT id, code, name, authority_type FROM academic_authorities {$where} ORDER BY name";
+            return "SELECT id, code, name, authority_type, district_id, local_body_code, website, address, latitude, longitude, year_established, sub_category " .
+                "FROM academic_authorities {$where} ORDER BY name";
         case 'cds_list':
             return "SELECT cds.id, cds.name, d.name AS district_name, lbt.name AS type_name FROM cds_list cds " .
                 "JOIN districts d ON cds.district_id = d.id " .

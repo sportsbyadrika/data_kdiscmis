@@ -7,7 +7,7 @@ $options = fetch_filter_options($conn);
 $type = $_GET['type'] ?? 'districts';
 $definitions = master_definitions();
 
-$hasCoordinates = in_array($type, ['job_stations', 'facilitation_centers', 'academic_institutions', 'sdpk_centers'], true);
+$hasCoordinates = in_array($type, ['job_stations', 'facilitation_centers', 'academic_institutions', 'academic_authorities', 'sdpk_centers'], true);
 $view = ($_GET['view'] ?? 'table') === 'map' && $hasCoordinates ? 'map' : 'table';
 
 if (!isset($definitions[$type])) {
@@ -135,7 +135,10 @@ include __DIR__ . '/partials/header.php';
                     $row['local_body_name'] ?? null,
                     $row['qualification_category_name'] ?? null,
                     $row['institution_type'] ?? null,
+                    $row['authority_type'] ?? null,
+                    $row['sub_category'] ?? null,
                     $row['address'] ?? null,
+                    $row['website'] ?? null,
                     $row['active_status_label'] ?? null,
                 ])),
             ],
@@ -193,6 +196,7 @@ function build_filter_options(string $field, array $options): array
         'local_body_type_id' => $options['local_body_types'],
         'qualification_category' => $options['qualification_categories'],
         'institution_type' => $options['institution_types'],
+        'authority_type' => $options['authority_types'],
         'local_body_id' => $options['local_bodies'],
         'block_panchayat_id' => $options['block_panchayats'],
         default => [],
