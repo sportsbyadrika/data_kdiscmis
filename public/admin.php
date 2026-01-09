@@ -246,9 +246,37 @@ function handle_master_creation(mysqli $conn, string $action, array $input, stri
             $code = trim($input['code'] ?? '');
             $name = trim($input['name'] ?? '');
             $authorityType = trim($input['authority_type'] ?? '');
-            if ($code !== '' && $name !== '' && $authorityType !== '') {
-                $stmt = $conn->prepare('INSERT INTO academic_authorities (code, name, authority_type) VALUES (?, ?, ?)');
-                $stmt->bind_param('sss', $code, $name, $authorityType);
+            $districtId = (int) ($input['district_id'] ?? 0);
+            $localBodyCode = trim($input['local_body_code'] ?? '');
+            $website = trim($input['website'] ?? '');
+            $address = trim($input['address'] ?? '');
+            $latitude = ($input['latitude'] ?? '') !== '' ? (float) $input['latitude'] : null;
+            $longitude = ($input['longitude'] ?? '') !== '' ? (float) $input['longitude'] : null;
+            $yearEstablished = ($input['year_established'] ?? '') !== '' ? (int) $input['year_established'] : null;
+            $subCategory = trim($input['sub_category'] ?? '');
+            if ($code !== '' && $name !== '' && $authorityType !== '' && $districtId) {
+                $localBodyValue = $localBodyCode !== '' ? $localBodyCode : null;
+                $websiteValue = $website !== '' ? $website : null;
+                $addressValue = $address !== '' ? $address : null;
+                $subCategoryValue = $subCategory !== '' ? $subCategory : null;
+                $stmt = $conn->prepare(
+                    'INSERT INTO academic_authorities (code, name, authority_type, district_id, local_body_code, website, address, latitude, longitude, year_established, sub_category) ' .
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                );
+                $stmt->bind_param(
+                    'sssisssddis',
+                    $code,
+                    $name,
+                    $authorityType,
+                    $districtId,
+                    $localBodyValue,
+                    $websiteValue,
+                    $addressValue,
+                    $latitude,
+                    $longitude,
+                    $yearEstablished,
+                    $subCategoryValue
+                );
                 $stmt->execute();
                 $message = 'Academic authority added.';
             }
