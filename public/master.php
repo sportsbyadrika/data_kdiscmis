@@ -132,13 +132,13 @@ include __DIR__ . '/partials/header.php';
                 'details' => implode(' • ', array_filter([
                     $row['district_name'] ?? null,
                     $row['block_panchayat_name'] ?? null,
-                    $row['local_body_name'] ?? null,
+                    $row['local_body_name'] ? 'Local Body: ' . $row['local_body_name'] : null,
                     $row['qualification_category_name'] ?? null,
                     $row['institution_type'] ?? null,
                     $row['authority_type'] ?? null,
                     $row['sub_category'] ?? null,
-                    $row['address'] ?? null,
-                    $row['website'] ?? null,
+                    $row['address'] ? 'Address: ' . $row['address'] : null,
+                    $row['website'] ? 'Website: ' . $row['website'] : null,
                     $row['active_status_label'] ?? null,
                 ])),
             ],
@@ -164,6 +164,11 @@ include __DIR__ . '/partials/header.php';
                 mapTypeControl: false,
             });
 
+            const markerIcon = {
+                url: 'https://maps.google.com/mapfiles/kml/shapes/universities.png',
+                scaledSize: new google.maps.Size(32, 32),
+            };
+
             masterLocations.forEach((location) => {
                 if (typeof location.latitude !== 'number' || Number.isNaN(location.latitude) ||
                     typeof location.longitude !== 'number' || Number.isNaN(location.longitude)) {
@@ -174,6 +179,7 @@ include __DIR__ . '/partials/header.php';
                     position: {lat: location.latitude, lng: location.longitude},
                     map,
                     title: location.name,
+                    icon: markerIcon,
                 });
 
                 if (location.details) {
