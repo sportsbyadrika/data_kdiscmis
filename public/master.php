@@ -132,7 +132,7 @@ include __DIR__ . '/partials/header.php';
                 'details' => implode(' • ', array_filter([
                     $row['district_name'] ?? null,
                     $row['block_panchayat_name'] ?? null,
-                    $row['local_body_name'] ? 'Local Body: ' . $row['local_body_name'] : null,
+                    $row['local_body_name'] ? 'Localbody: ' . $row['local_body_name'] : null,
                     $row['qualification_category_name'] ?? null,
                     $row['institution_type'] ?? null,
                     $row['authority_type'] ?? null,
@@ -165,7 +165,7 @@ include __DIR__ . '/partials/header.php';
             });
 
             const markerIcon = {
-                url: 'https://maps.google.com/mapfiles/kml/shapes/universities.png',
+                url: '/assets/university-marker.svg',
                 scaledSize: new google.maps.Size(32, 32),
             };
 
