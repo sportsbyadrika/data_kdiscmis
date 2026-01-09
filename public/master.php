@@ -123,6 +123,15 @@ include __DIR__ . '/partials/header.php';
 </div>
 <?php if ($view === 'map' && $hasCoordinates && !empty($mapRows)): ?>
     <?php $mapApiKey = env('GOOGLE_MAPS_API_KEY', ''); ?>
+    <?php
+    $markerIcons = [
+        'academic_authorities' => '/assets/university-marker.svg',
+        'academic_institutions' => '/assets/academic-institution-marker.svg',
+        'job_stations' => '/assets/job-station-marker.svg',
+        'sdpk_centers' => '/assets/sdpk-center-marker.svg',
+    ];
+    $markerIconUrl = $markerIcons[$type] ?? null;
+    ?>
     <script>
         const masterLocations = <?php echo json_encode(array_map(
             static fn(array $row): array => [
@@ -144,6 +153,7 @@ include __DIR__ . '/partials/header.php';
             ],
             $mapRows
         ), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
+        const masterMarkerIconUrl = <?php echo json_encode($markerIconUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
 
         function initMasterMap() {
             const mapElement = document.getElementById('master-map');
@@ -164,10 +174,12 @@ include __DIR__ . '/partials/header.php';
                 mapTypeControl: false,
             });
 
-            const markerIcon = {
-                url: '/assets/university-marker.svg',
-                scaledSize: new google.maps.Size(32, 32),
-            };
+            const markerIcon = masterMarkerIconUrl
+                ? {
+                    url: masterMarkerIconUrl,
+                    scaledSize: new google.maps.Size(32, 32),
+                }
+                : null;
 
             masterLocations.forEach((location) => {
                 if (typeof location.latitude !== 'number' || Number.isNaN(location.latitude) ||
@@ -179,7 +191,7 @@ include __DIR__ . '/partials/header.php';
                     position: {lat: location.latitude, lng: location.longitude},
                     map,
                     title: location.name,
-                    icon: markerIcon,
+                    icon: markerIcon ?? undefined,
                 });
 
                 if (location.details) {
