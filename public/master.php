@@ -17,7 +17,15 @@ if (!isset($definitions[$type])) {
 }
 
 $filters = [];
+$multiFilters = $definitions[$type]['multi_filters'] ?? [];
 foreach ($definitions[$type]['filters'] as $field => $label) {
+    if (in_array($field, $multiFilters, true)) {
+        $filters[$field] = $_GET[$field] ?? [];
+        if (!is_array($filters[$field])) {
+            $filters[$field] = [$filters[$field]];
+        }
+        continue;
+    }
     $filters[$field] = $_GET[$field] ?? '';
 }
 $search = trim($_GET['search'] ?? '');
@@ -56,10 +64,14 @@ include __DIR__ . '/partials/header.php';
     <?php foreach ($definitions[$type]['filters'] as $field => $label): ?>
         <div class="col-sm-6 col-lg-4">
             <label class="form-label small text-muted"><?php echo htmlspecialchars($label); ?></label>
-            <select name="<?php echo htmlspecialchars($field); ?>" class="form-select">
-                <option value="">Any <?php echo htmlspecialchars($label); ?></option>
+            <?php $isMulti = in_array($field, $multiFilters, true); ?>
+            <select name="<?php echo htmlspecialchars($field); ?><?php echo $isMulti ? '[]' : ''; ?>" class="form-select" <?php echo $isMulti ? 'multiple' : ''; ?>>
+                <?php if (!$isMulti): ?>
+                    <option value="">Any <?php echo htmlspecialchars($label); ?></option>
+                <?php endif; ?>
                 <?php foreach (build_filter_options($field, $options) as $item): ?>
-                    <option value="<?php echo $item['id']; ?>" <?php echo $filters[$field] == $item['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($item['name']); ?></option>
+                    <?php $isSelected = $isMulti ? in_array((string) $item['id'], array_map('strval', $filters[$field] ?? []), true) : $filters[$field] == $item['id']; ?>
+                    <option value="<?php echo $item['id']; ?>" <?php echo $isSelected ? 'selected' : ''; ?>><?php echo htmlspecialchars($item['name']); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -128,7 +140,6 @@ include __DIR__ . '/partials/header.php';
         'academic_authorities' => '/assets/university-marker.svg',
         'academic_institutions' => '/assets/academic-institution-marker.svg',
         'job_stations' => '/assets/job-station-marker.svg',
-        'sdpk_centers' => '/assets/sdpk-center-marker.svg',
     ];
     $markerIconUrl = $markerIcons[$type] ?? null;
     ?>
@@ -138,6 +149,7 @@ include __DIR__ . '/partials/header.php';
                 'name' => $row['name'] ?? '',
                 'latitude' => isset($row['latitude']) ? (float) $row['latitude'] : null,
                 'longitude' => isset($row['longitude']) ? (float) $row['longitude'] : null,
+                'phase' => $row['phase'] ?? null,
                 'details' => implode(' • ', array_filter([
                     $row['district_name'] ?? null,
                     $row['block_panchayat_name'] ?? null,
@@ -147,6 +159,7 @@ include __DIR__ . '/partials/header.php';
                     $row['authority_type'] ?? null,
                     $row['sub_category'] ?? null,
                     !empty($row['address']) ? 'Address: ' . $row['address'] : null,
+                    !empty($row['phase']) ? 'Phase: ' . $row['phase'] : null,
                     !empty($row['website']) ? 'Website: ' . $row['website'] : null,
                     $row['active_status_label'] ?? null,
                 ])),
@@ -180,6 +193,33 @@ include __DIR__ . '/partials/header.php';
                     scaledSize: new google.maps.Size(32, 32),
                 }
                 : null;
+            const buildSvgIcon = (svg) => `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+            const sdpkPhaseIcons = {
+                1: {
+                    url: buildSvgIcon(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+                        '<circle cx="32" cy="32" r="22" fill="#8B0000" stroke="#2F0000" stroke-width="4"/>' +
+                        '</svg>'
+                    ),
+                    scaledSize: new google.maps.Size(48, 48),
+                },
+                2: {
+                    url: buildSvgIcon(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+                        '<rect x="14" y="14" width="36" height="36" rx="6" fill="#1E7F1E" stroke="#0E3F0E" stroke-width="4"/>' +
+                        '</svg>'
+                    ),
+                    scaledSize: new google.maps.Size(48, 48),
+                },
+                3: {
+                    url: buildSvgIcon(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+                        '<polygon points="32,10 54,32 32,54 10,32" fill="#003366" stroke="#001633" stroke-width="4"/>' +
+                        '</svg>'
+                    ),
+                    scaledSize: new google.maps.Size(48, 48),
+                },
+            };
 
             masterLocations.forEach((location) => {
                 if (typeof location.latitude !== 'number' || Number.isNaN(location.latitude) ||
@@ -191,7 +231,11 @@ include __DIR__ . '/partials/header.php';
                     position: {lat: location.latitude, lng: location.longitude},
                     map,
                     title: location.name,
-                    icon: markerIcon ?? undefined,
+                    icon: masterMarkerIconUrl
+                        ? markerIcon
+                        : (<?php echo json_encode($type, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?> === 'sdpk_centers'
+                            ? (sdpkPhaseIcons[Number(location.phase)] || undefined)
+                            : undefined),
                 });
 
                 if (location.details) {
@@ -217,6 +261,7 @@ function build_filter_options(string $field, array $options): array
         'authority_type' => $options['authority_types'],
         'local_body_id' => $options['local_bodies'],
         'block_panchayat_id' => $options['block_panchayats'],
+        'phase' => $options['sdpk_phases'],
         default => [],
     };
 }

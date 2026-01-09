@@ -36,6 +36,7 @@ function fetch_filter_options(mysqli $conn): array
         'authority_types' => fetch_distinct($conn, 'academic_authorities', 'authority_type'),
         'local_bodies' => fetch_named($conn, 'local_bodies'),
         'block_panchayats' => fetch_named($conn, 'block_panchayats'),
+        'sdpk_phases' => fetch_distinct($conn, 'sdpk_centers', 'phase'),
     ];
 }
 
@@ -101,12 +102,14 @@ function master_definitions(): array
             'title' => 'SDPK Centers',
             'group' => 'Local body',
             'table' => 'sdpk_centers',
-            'filters' => ['district_id' => 'District'],
+            'filters' => ['district_id' => 'District', 'phase' => 'Phase'],
+            'multi_filters' => ['phase'],
             'columns' => [
                 'code' => 'Code',
                 'name' => 'Center Name',
                 'address' => 'Address',
                 'district_name' => 'District',
+                'phase' => 'Phase',
                 'latitude' => 'Latitude',
                 'longitude' => 'Longitude',
                 'active_status_label' => 'Active Status',
@@ -214,13 +217,24 @@ function fetch_master_rows(mysqli $conn, string $key, array $filters, string $se
     $types = '';
 
     foreach ($filters as $field => $value) {
-        if ($value === '') {
+        $values = is_array($value) ? array_values(array_filter($value, static fn($entry): bool => $entry !== '' && $entry !== null)) : [$value];
+        if (empty($values) || (count($values) === 1 && $values[0] === '')) {
             continue;
         }
-        $conditions[] = "{$field} = ?";
-        $isIdField = str_ends_with($field, '_id') || $field === 'qualification_category';
-        $types .= $isIdField ? 'i' : 's';
-        $params[] = $isIdField ? (int) $value : $value;
+        $isIdField = str_ends_with($field, '_id') || $field === 'qualification_category' || $field === 'phase';
+        if (count($values) === 1) {
+            $conditions[] = "{$field} = ?";
+            $types .= $isIdField ? 'i' : 's';
+            $params[] = $isIdField ? (int) $values[0] : $values[0];
+            continue;
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($values), '?'));
+        $conditions[] = "{$field} IN ({$placeholders})";
+        foreach ($values as $entry) {
+            $types .= $isIdField ? 'i' : 's';
+            $params[] = $isIdField ? (int) $entry : $entry;
+        }
     }
 
     if ($search !== '') {
@@ -259,7 +273,7 @@ function build_master_query(string $key, string $where): string
                 "LEFT JOIN block_panchayats bp ON fc.block_panchayat_id = bp.id " .
                 "JOIN local_bodies lb ON fc.local_body_id = lb.id {$where} ORDER BY fc.name";
         case 'sdpk_centers':
-            return "SELECT sc.id, sc.code, sc.name, sc.address, sc.latitude, sc.longitude, sc.active_status, " .
+            return "SELECT sc.id, sc.code, sc.name, sc.address, sc.latitude, sc.longitude, sc.phase, sc.active_status, " .
                 "CASE WHEN sc.active_status = 1 THEN 'Active' ELSE 'Inactive' END AS active_status_label, d.name AS district_name " .
                 "FROM sdpk_centers sc JOIN districts d ON sc.district_id = d.id {$where} ORDER BY sc.name";
         case 'qualification_categories':
