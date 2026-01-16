@@ -38,3 +38,18 @@ body {
 .issue-details-cell {
     max-width: 220px;
 }
+
+.home-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.home-card-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
