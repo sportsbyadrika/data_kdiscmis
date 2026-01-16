@@ -135,7 +135,7 @@ include __DIR__ . '/partials/header.php';
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Reference Institution</label>
+                <label class="form-label">Institution/SDPK center</label>
                 <input class="form-control" name="reference" value="<?php echo htmlspecialchars($searchFilters['reference']); ?>" placeholder="Search by institution">
             </div>
             <div class="col-md-4">
@@ -180,7 +180,7 @@ include __DIR__ . '/partials/header.php';
                             <th scope="col">Issue ID</th>
                             <th scope="col">Date &amp; Time</th>
                             <th scope="col">Category</th>
-                            <th scope="col">Reference Institution</th>
+                            <th scope="col">Institution/SDPK center</th>
                             <th scope="col">Reported By</th>
                             <th scope="col">Status</th>
                             <th scope="col"></th>
