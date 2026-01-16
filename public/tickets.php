@@ -3,6 +3,16 @@ require_once __DIR__ . '/../src/tickets.php';
 
 $conn = db_connect();
 $categorySummary = fetch_ticket_category_summary($conn);
+$summaryTotals = [
+    'total' => 0,
+    'resolved' => 0,
+    'pending' => 0,
+];
+foreach ($categorySummary as $summary) {
+    $summaryTotals['total'] += (int) $summary['total_count'];
+    $summaryTotals['resolved'] += (int) $summary['resolved_count'];
+    $summaryTotals['pending'] += (int) $summary['pending_count'];
+}
 
 include __DIR__ . '/partials/header.php';
 ?>
@@ -38,7 +48,7 @@ include __DIR__ . '/partials/header.php';
                             <tr>
                                 <td class="fw-semibold"><?php echo htmlspecialchars($summary['name']); ?></td>
                                 <td>
-                                    <a class="text-decoration-none" href="/ticket_status_check.php?category=<?php echo urlencode((string) $summary['id']); ?>">
+                                    <a class="text-decoration-none" href="/ticket_status_check.php?category=<?php echo urlencode((string) $summary['id']); ?>&status=all&search=1">
                                         <?php echo (int) $summary['total_count']; ?>
                                     </a>
                                 </td>
@@ -50,6 +60,12 @@ include __DIR__ . '/partials/header.php';
                                 </td>
                             </tr>
                         <?php endforeach; ?>
+                        <tr class="table-light">
+                            <td class="fw-semibold">Total</td>
+                            <td class="fw-semibold"><?php echo $summaryTotals['total']; ?></td>
+                            <td class="fw-semibold text-success"><?php echo $summaryTotals['resolved']; ?></td>
+                            <td class="fw-semibold text-warning"><?php echo $summaryTotals['pending']; ?></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

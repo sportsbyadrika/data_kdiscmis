@@ -11,6 +11,7 @@ $formData = [
     'category_id' => '',
     'district_id' => '',
     'reference_institution' => '',
+    'event_name' => '',
     'reported_by' => '',
     'reported_mobile' => '',
     'reported_email' => '',
@@ -21,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formData['category_id'] = $_POST['category_id'] ?? '';
     $formData['district_id'] = $_POST['district_id'] ?? '';
     $formData['reference_institution'] = trim($_POST['reference_institution'] ?? '');
+    $formData['event_name'] = trim($_POST['event_name'] ?? '');
     $formData['reported_by'] = trim($_POST['reported_by'] ?? '');
     $formData['reported_mobile'] = trim($_POST['reported_mobile'] ?? '');
     $formData['reported_email'] = trim($_POST['reported_email'] ?? '');
@@ -89,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'category_id' => (int) $formData['category_id'],
             'district_id' => (int) $formData['district_id'],
             'reference_institution' => $formData['reference_institution'],
+            'event_name' => $formData['event_name'],
             'reported_by' => $formData['reported_by'],
             'reported_mobile' => $formData['reported_mobile'],
             'reported_email' => $formData['reported_email'],
@@ -151,6 +154,10 @@ include __DIR__ . '/partials/header.php';
                 <div class="col-md-6">
                     <label class="form-label">Institution/SDPK center</label>
                     <input class="form-control" name="reference_institution" value="<?php echo htmlspecialchars($formData['reference_institution']); ?>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Event Name</label>
+                    <input class="form-control" name="event_name" value="<?php echo htmlspecialchars($formData['event_name']); ?>">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Reported By Name</label>
