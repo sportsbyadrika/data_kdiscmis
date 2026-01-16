@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../src/auth.php';
+require_once __DIR__ . '/../../src/users.php';
 ?>
 <!doctype html>
 <html lang="en">
@@ -29,6 +30,21 @@ require_once __DIR__ . '/../../src/auth.php';
                 <li class="nav-item"><a class="nav-link" href="/blog.php">Blog</a></li>
                 <li class="nav-item"><a class="nav-link" href="/tickets.php">Tickets</a></li>
                 <?php if (is_logged_in()): ?>
+                    <?php $navUser = current_user(); ?>
+                    <?php $navChildRole = $navUser ? child_role_for($navUser['role']) : null; ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Settings</a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="/settings_users.php">
+                                    <?php echo htmlspecialchars($navChildRole ? role_label($navChildRole) : 'User management'); ?>
+                                </a>
+                            </li>
+                            <?php if ($navUser && $navUser['role'] === ROLE_SUPER_ADMIN): ?>
+                                <li><a class="dropdown-item" href="/settings_masters.php">Master data</a></li>
+                            <?php endif; ?>
+                        </ul>
+                    </li>
                     <li class="nav-item"><a class="nav-link" href="/admin.php">Dashboard</a></li>
                     <li class="nav-item"><a class="btn btn-outline-secondary ms-lg-2" href="/logout.php">Logout</a></li>
                 <?php else: ?>

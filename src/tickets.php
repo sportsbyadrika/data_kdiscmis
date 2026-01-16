@@ -8,6 +8,22 @@ function fetch_ticket_categories(mysqli $conn): array
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
+function fetch_ticket_status_counts(mysqli $conn): array
+{
+    $query = "SELECT COUNT(*) AS total, " .
+        "SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending, " .
+        "SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) AS resolved " .
+        "FROM tickets";
+    $result = $conn->query($query);
+    $row = $result->fetch_assoc();
+
+    return [
+        'total' => (int) ($row['total'] ?? 0),
+        'pending' => (int) ($row['pending'] ?? 0),
+        'resolved' => (int) ($row['resolved'] ?? 0),
+    ];
+}
+
 function fetch_ticket_category_summary(mysqli $conn): array
 {
     $query = "SELECT c.id, c.name, " .
@@ -23,7 +39,14 @@ function fetch_ticket_category_summary(mysqli $conn): array
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
-function fetch_ticket_list(mysqli $conn, ?int $categoryId, ?string $status, int $page, int $perPage): array
+function fetch_ticket_list(
+    mysqli $conn,
+    ?int $categoryId,
+    ?string $status,
+    int $page,
+    int $perPage,
+    array $searchFilters = []
+): array
 {
     $conditions = [];
     $params = [];
@@ -40,6 +63,24 @@ function fetch_ticket_list(mysqli $conn, ?int $categoryId, ?string $status, int 
         $conditions[] = 't.status = ?';
         $types .= 's';
         $params[] = $normalized;
+    }
+
+    if (!empty($searchFilters['reference'])) {
+        $conditions[] = 't.reference_institution LIKE ?';
+        $types .= 's';
+        $params[] = '%' . $searchFilters['reference'] . '%';
+    }
+
+    if (!empty($searchFilters['reported'])) {
+        $conditions[] = 't.reported_by LIKE ?';
+        $types .= 's';
+        $params[] = '%' . $searchFilters['reported'] . '%';
+    }
+
+    if (!empty($searchFilters['mobile'])) {
+        $conditions[] = 't.reported_mobile LIKE ?';
+        $types .= 's';
+        $params[] = '%' . $searchFilters['mobile'] . '%';
     }
 
     $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
@@ -69,6 +110,34 @@ function fetch_ticket_list(mysqli $conn, ?int $categoryId, ?string $status, int 
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
     return ['rows' => $rows, 'total' => $total];
+}
+
+function update_ticket_resolution(mysqli $conn, int $ticketId, string $status, string $resolutionText): bool
+{
+    $normalizedStatus = $status === 'Resolved' ? 'Resolved' : 'Pending';
+    $stmt = $conn->prepare('UPDATE tickets SET status = ?, resolution_text = ? WHERE id = ?');
+    $stmt->bind_param('ssi', $normalizedStatus, $resolutionText, $ticketId);
+    return $stmt->execute();
+}
+
+function append_ticket_attachments(mysqli $conn, int $ticketId, array $attachments): void
+{
+    if (empty($attachments)) {
+        return;
+    }
+    $attachmentStmt = $conn->prepare(
+        'INSERT INTO ticket_attachments (ticket_id, file_name, file_path, file_type) VALUES (?, ?, ?, ?)'
+    );
+    foreach ($attachments as $attachment) {
+        $attachmentStmt->bind_param(
+            'isss',
+            $ticketId,
+            $attachment['file_name'],
+            $attachment['file_path'],
+            $attachment['file_type']
+        );
+        $attachmentStmt->execute();
+    }
 }
 
 function fetch_ticket_attachments(mysqli $conn, int $ticketId): array
