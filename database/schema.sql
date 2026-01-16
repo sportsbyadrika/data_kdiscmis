@@ -145,6 +145,41 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     published_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS issue_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL UNIQUE,
+    description VARCHAR(255) NULL,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tickets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tracker_number VARCHAR(30) NULL UNIQUE,
+    category_id INT NOT NULL,
+    district_id INT NOT NULL,
+    reference_institution VARCHAR(200) NOT NULL,
+    reported_by VARCHAR(150) NOT NULL,
+    reported_mobile VARCHAR(20) NOT NULL,
+    issue_details TEXT NOT NULL,
+    status ENUM('Pending','Resolved') NOT NULL DEFAULT 'Pending',
+    resolution_text TEXT NULL,
+    resolved_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES issue_categories(id),
+    FOREIGN KEY (district_id) REFERENCES districts(id)
+);
+
+CREATE TABLE IF NOT EXISTS ticket_attachments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_id INT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    file_type VARCHAR(50) NOT NULL,
+    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ticket_id) REFERENCES tickets(id)
+);
+
 INSERT INTO users (name, email, mobile, password_hash, role, status)
 VALUES (
     'Super Admin',
@@ -155,3 +190,10 @@ VALUES (
     'active'
 )
 ON DUPLICATE KEY UPDATE mobile = mobile;
+
+INSERT INTO issue_categories (name, description)
+VALUES
+    ('Data Correction', 'Request to correct or update master data'),
+    ('Login Issue', 'Unable to access the portal or credentials not working'),
+    ('System Bug', 'Unexpected errors or performance issues')
+ON DUPLICATE KEY UPDATE name = name;
