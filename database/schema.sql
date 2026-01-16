@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     category_id INT NOT NULL,
     district_id INT NOT NULL,
     reference_institution VARCHAR(200) NOT NULL,
+    event_name VARCHAR(200) NULL,
     reported_by VARCHAR(150) NOT NULL,
     reported_mobile VARCHAR(20) NOT NULL,
     reported_email VARCHAR(180) NOT NULL,

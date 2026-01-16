@@ -71,6 +71,12 @@ function fetch_ticket_list(
         $params[] = '%' . $searchFilters['reference'] . '%';
     }
 
+    if (!empty($searchFilters['event_name'])) {
+        $conditions[] = 't.event_name LIKE ?';
+        $types .= 's';
+        $params[] = '%' . $searchFilters['event_name'] . '%';
+    }
+
     if (!empty($searchFilters['reported'])) {
         $conditions[] = 't.reported_by LIKE ?';
         $types .= 's';
@@ -110,7 +116,7 @@ function fetch_ticket_list(
     $total = (int) $countStmt->get_result()->fetch_assoc()['total'];
 
     $offset = ($page - 1) * $perPage;
-    $query = "SELECT t.id, t.tracker_number, t.created_at, t.reference_institution, t.reported_by, " .
+    $query = "SELECT t.id, t.tracker_number, t.created_at, t.reference_institution, t.event_name, t.reported_by, " .
         "t.reported_mobile, t.reported_email, t.issue_details, t.status, t.resolution_text, " .
         "c.name AS category_name, d.name AS district_name " .
         "FROM tickets t " .
@@ -128,11 +134,17 @@ function fetch_ticket_list(
     return ['rows' => $rows, 'total' => $total];
 }
 
-function update_ticket_resolution(mysqli $conn, int $ticketId, string $status, string $resolutionText): bool
+function update_ticket_resolution(
+    mysqli $conn,
+    int $ticketId,
+    string $status,
+    string $resolutionText,
+    string $eventName
+): bool
 {
     $normalizedStatus = $status === 'Resolved' ? 'Resolved' : 'Pending';
-    $stmt = $conn->prepare('UPDATE tickets SET status = ?, resolution_text = ? WHERE id = ?');
-    $stmt->bind_param('ssi', $normalizedStatus, $resolutionText, $ticketId);
+    $stmt = $conn->prepare('UPDATE tickets SET status = ?, resolution_text = ?, event_name = ? WHERE id = ?');
+    $stmt->bind_param('sssi', $normalizedStatus, $resolutionText, $eventName, $ticketId);
     return $stmt->execute();
 }
 
@@ -172,14 +184,15 @@ function create_ticket(mysqli $conn, array $payload, array $attachments): string
 
     try {
         $stmt = $conn->prepare(
-            'INSERT INTO tickets (category_id, district_id, reference_institution, reported_by, reported_mobile, reported_email, issue_details) ' .
-            'VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO tickets (category_id, district_id, reference_institution, event_name, reported_by, reported_mobile, reported_email, issue_details) ' .
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->bind_param(
-            'iisssss',
+            'iissssss',
             $payload['category_id'],
             $payload['district_id'],
             $payload['reference_institution'],
+            $payload['event_name'],
             $payload['reported_by'],
             $payload['reported_mobile'],
             $payload['reported_email'],

@@ -16,6 +16,7 @@ if (!in_array($status, $allowedStatuses, true)) {
 $categoryId = isset($_GET['category']) && $_GET['category'] !== '' ? (int) $_GET['category'] : null;
 $searchFilters = [
     'reference' => trim($_GET['reference'] ?? ''),
+    'event_name' => trim($_GET['event_name'] ?? ''),
     'reported' => trim($_GET['reported'] ?? ''),
     'mobile' => trim($_GET['mobile'] ?? ''),
 ];
@@ -43,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $statusInput = $_POST['status'] ?? 'Pending';
             $statusValue = $statusInput === 'Resolved' ? 'Resolved' : 'Pending';
             $resolutionText = trim($_POST['resolution_text'] ?? '');
+            $eventName = trim($_POST['event_name'] ?? '');
 
             if ($ticketId === 0) {
                 $errors[] = 'Invalid ticket selected.';
@@ -85,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (empty($errors)) {
-                update_ticket_resolution($conn, $ticketId, $statusValue, $resolutionText);
+                update_ticket_resolution($conn, $ticketId, $statusValue, $resolutionText, $eventName);
                 append_ticket_attachments($conn, $ticketId, $uploadedAttachments);
                 $redirectQuery = $_SERVER['QUERY_STRING'];
                 $redirectUrl = '/tickets_manage.php' . ($redirectQuery ? '?' . $redirectQuery . '&updated=1' : '?updated=1');
@@ -139,6 +141,10 @@ include __DIR__ . '/partials/header.php';
                 <input class="form-control" name="reference" value="<?php echo htmlspecialchars($searchFilters['reference']); ?>" placeholder="Search by institution">
             </div>
             <div class="col-md-4">
+                <label class="form-label">Event Name</label>
+                <input class="form-control" name="event_name" value="<?php echo htmlspecialchars($searchFilters['event_name']); ?>" placeholder="Search by event">
+            </div>
+            <div class="col-md-4">
                 <label class="form-label">Reported By</label>
                 <input class="form-control" name="reported" value="<?php echo htmlspecialchars($searchFilters['reported']); ?>" placeholder="Search by name">
             </div>
@@ -180,6 +186,7 @@ include __DIR__ . '/partials/header.php';
                             <th scope="col">Issue ID</th>
                             <th scope="col">Date &amp; Time</th>
                             <th scope="col">Category</th>
+                            <th scope="col">Event Name</th>
                             <th scope="col">Institution/SDPK center</th>
                             <th scope="col">Reported By</th>
                             <th scope="col">Status</th>
@@ -203,6 +210,7 @@ include __DIR__ . '/partials/header.php';
                                 <td><?php echo htmlspecialchars($ticket['tracker_number'] ?: ('#' . $ticket['id'])); ?></td>
                                 <td><?php echo date('d M Y, g:i A', strtotime($ticket['created_at'])); ?></td>
                                 <td><?php echo htmlspecialchars($ticket['category_name']); ?></td>
+                                <td><?php echo htmlspecialchars($ticket['event_name'] ?? '-'); ?></td>
                                 <td><?php echo htmlspecialchars($ticket['reference_institution']); ?></td>
                                 <td>
                                     <div class="fw-semibold"><?php echo htmlspecialchars($ticket['reported_by']); ?></div>
@@ -222,6 +230,7 @@ include __DIR__ . '/partials/header.php';
                                         data-bs-target="#ticketEditModal"
                                         data-ticket-id="<?php echo (int) $ticket['id']; ?>"
                                         data-tracker="<?php echo htmlspecialchars($ticket['tracker_number'] ?: ('#' . $ticket['id'])); ?>"
+                                        data-event-name="<?php echo htmlspecialchars($ticket['event_name'] ?? ''); ?>"
                                         data-status="<?php echo htmlspecialchars($ticket['status']); ?>"
                                         data-resolution="<?php echo htmlspecialchars($ticket['resolution_text'] ?? ''); ?>"
                                         data-attachments="<?php echo $attachmentsJson; ?>"
@@ -241,6 +250,7 @@ include __DIR__ . '/partials/header.php';
                         'category' => $categoryId,
                         'status' => $status,
                         'reference' => $searchFilters['reference'],
+                        'event_name' => $searchFilters['event_name'],
                         'reported' => $searchFilters['reported'],
                         'mobile' => $searchFilters['mobile'],
                     ], static fn($value): bool => $value !== null && $value !== '');
@@ -284,6 +294,10 @@ include __DIR__ . '/partials/header.php';
                         <div class="form-control-plaintext fw-semibold" id="editTicketTracker"></div>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Event Name</label>
+                        <input class="form-control" name="event_name" id="editTicketEventName" value="">
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Status</label>
                         <select class="form-select" name="status" id="editTicketStatus">
                             <option value="Pending">Pending</option>
@@ -322,6 +336,7 @@ include __DIR__ . '/partials/header.php';
         }
         document.getElementById('editTicketId').value = trigger.dataset.ticketId || '';
         document.getElementById('editTicketTracker').textContent = trigger.dataset.tracker || '-';
+        document.getElementById('editTicketEventName').value = trigger.dataset.eventName || '';
         document.getElementById('editTicketStatus').value = trigger.dataset.status || 'Pending';
         document.getElementById('editTicketResolution').value = trigger.dataset.resolution || '';
 

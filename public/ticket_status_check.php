@@ -5,18 +5,39 @@ $conn = db_connect();
 $categories = fetch_ticket_categories($conn);
 
 $categoryId = isset($_GET['category']) && $_GET['category'] !== '' ? (int) $_GET['category'] : null;
+$statusFilter = $_GET['status'] ?? '';
+$allowedStatuses = ['all', 'pending', 'resolved'];
+if (!in_array($statusFilter, $allowedStatuses, true)) {
+    $statusFilter = '';
+}
 $searchFilters = [
     'issue_id' => trim($_GET['issue_id'] ?? ''),
+    'event_name' => trim($_GET['event_name'] ?? ''),
     'reported' => trim($_GET['reported'] ?? ''),
     'mobile' => trim($_GET['mobile'] ?? ''),
 ];
 
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $perPage = 8;
-$ticketResult = fetch_ticket_list($conn, $categoryId, 'all', $page, $perPage, $searchFilters);
-$tickets = $ticketResult['rows'];
-$totalTickets = $ticketResult['total'];
-$totalPages = max(1, (int) ceil($totalTickets / $perPage));
+$tickets = [];
+$totalTickets = 0;
+$totalPages = 1;
+$searchErrors = [];
+$isSearchRequest = isset($_GET['search']);
+if ($isSearchRequest) {
+    if (!$categoryId) {
+        $searchErrors[] = 'Please select an issue category.';
+    }
+    if ($statusFilter === '') {
+        $searchErrors[] = 'Please select a ticket status.';
+    }
+    if (empty($searchErrors)) {
+        $ticketResult = fetch_ticket_list($conn, $categoryId, $statusFilter, $page, $perPage, $searchFilters);
+        $tickets = $ticketResult['rows'];
+        $totalTickets = $ticketResult['total'];
+        $totalPages = max(1, (int) ceil($totalTickets / $perPage));
+    }
+}
 $newTracker = $_GET['new'] ?? '';
 
 include __DIR__ . '/partials/header.php';
@@ -39,7 +60,7 @@ include __DIR__ . '/partials/header.php';
             <div class="col-md-4">
                 <label class="form-label">Issue Category</label>
                 <select class="form-select" name="category">
-                    <option value="">All categories</option>
+                    <option value="">Select category</option>
                     <?php foreach ($categories as $category): ?>
                         <option value="<?php echo (int) $category['id']; ?>" <?php echo $categoryId === (int) $category['id'] ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($category['name']); ?>
@@ -48,8 +69,21 @@ include __DIR__ . '/partials/header.php';
                 </select>
             </div>
             <div class="col-md-4">
+                <label class="form-label">Ticket Status</label>
+                <select class="form-select" name="status">
+                    <option value="">Select status</option>
+                    <option value="all" <?php echo $statusFilter === 'all' ? 'selected' : ''; ?>>All statuses</option>
+                    <option value="pending" <?php echo $statusFilter === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                    <option value="resolved" <?php echo $statusFilter === 'resolved' ? 'selected' : ''; ?>>Resolved</option>
+                </select>
+            </div>
+            <div class="col-md-4">
                 <label class="form-label">Issue ID (optional)</label>
                 <input class="form-control" name="issue_id" value="<?php echo htmlspecialchars($searchFilters['issue_id']); ?>" placeholder="e.g., ISS-20240501-00001">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Event Name</label>
+                <input class="form-control" name="event_name" value="<?php echo htmlspecialchars($searchFilters['event_name']); ?>" placeholder="Search by event">
             </div>
             <div class="col-md-4">
                 <label class="form-label">Reported By Name</label>
@@ -61,7 +95,7 @@ include __DIR__ . '/partials/header.php';
             </div>
             <div class="col-12 d-flex justify-content-end gap-2">
                 <a class="btn btn-outline-secondary" href="/ticket_status_check.php">Reset</a>
-                <button class="btn btn-primary" type="submit">Search</button>
+                <button class="btn btn-primary" type="submit" name="search" value="1">Search</button>
             </div>
         </div>
     </div>
@@ -69,15 +103,26 @@ include __DIR__ . '/partials/header.php';
 
 <div class="card border-0 shadow-sm">
     <div class="card-body">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-            <div>
-                <h2 class="h5 mb-1">Ticket List</h2>
-                <p class="text-muted small mb-0"><?php echo $totalTickets; ?> results found.</p>
+        <?php if (!$isSearchRequest): ?>
+            <div class="alert alert-info mb-0">Select an issue category and status, then click search to view tickets.</div>
+        <?php elseif (!empty($searchErrors)): ?>
+            <div class="alert alert-warning mb-0">
+                <ul class="mb-0">
+                    <?php foreach ($searchErrors as $error): ?>
+                        <li><?php echo htmlspecialchars($error); ?></li>
+                    <?php endforeach; ?>
+                </ul>
             </div>
-        </div>
-        <?php if (empty($tickets)): ?>
-            <div class="alert alert-info mb-0">No tickets found for the selected filters.</div>
         <?php else: ?>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Ticket List</h2>
+                    <p class="text-muted small mb-0"><?php echo $totalTickets; ?> results found.</p>
+                </div>
+            </div>
+            <?php if (empty($tickets)): ?>
+                <div class="alert alert-info mb-0">No tickets found for the selected filters.</div>
+            <?php else: ?>
             <div class="table-responsive">
                 <table class="table align-middle">
                     <thead class="table-light">
@@ -85,6 +130,7 @@ include __DIR__ . '/partials/header.php';
                             <th scope="col">Issue ID</th>
                             <th scope="col">Date &amp; Time</th>
                             <th scope="col">Category</th>
+                            <th scope="col">Event Name</th>
                             <th scope="col">Institution/SDPK center</th>
                             <th scope="col">Reported By</th>
                             <th scope="col">Issue Details</th>
@@ -109,6 +155,7 @@ include __DIR__ . '/partials/header.php';
                                 <td><?php echo htmlspecialchars($ticket['tracker_number'] ?: ('#' . $ticket['id'])); ?></td>
                                 <td><?php echo date('d M Y, g:i A', strtotime($ticket['created_at'])); ?></td>
                                 <td><?php echo htmlspecialchars($ticket['category_name']); ?></td>
+                                <td><?php echo htmlspecialchars($ticket['event_name'] ?? '-'); ?></td>
                                 <td><?php echo htmlspecialchars($ticket['reference_institution']); ?></td>
                                 <td><?php echo htmlspecialchars($ticket['reported_by']); ?></td>
                                 <td class="text-muted small issue-details-cell">
@@ -129,6 +176,7 @@ include __DIR__ . '/partials/header.php';
                                         data-ticket-id="<?php echo htmlspecialchars($ticket['tracker_number'] ?: ('#' . $ticket['id'])); ?>"
                                         data-created-at="<?php echo htmlspecialchars(date('d M Y, g:i A', strtotime($ticket['created_at']))); ?>"
                                         data-category="<?php echo htmlspecialchars($ticket['category_name']); ?>"
+                                        data-event-name="<?php echo htmlspecialchars($ticket['event_name'] ?? ''); ?>"
                                         data-reference="<?php echo htmlspecialchars($ticket['reference_institution']); ?>"
                                         data-reported="<?php echo htmlspecialchars($ticket['reported_by']); ?>"
                                         data-details="<?php echo htmlspecialchars($ticket['issue_details']); ?>"
@@ -149,9 +197,12 @@ include __DIR__ . '/partials/header.php';
                     <?php
                     $queryBase = array_filter([
                         'category' => $categoryId,
+                        'status' => $statusFilter,
                         'issue_id' => $searchFilters['issue_id'],
+                        'event_name' => $searchFilters['event_name'],
                         'reported' => $searchFilters['reported'],
                         'mobile' => $searchFilters['mobile'],
+                        'search' => '1',
                     ], static fn($value): bool => $value !== null && $value !== '');
                     $previousPage = max(1, $page - 1);
                     $nextPage = min($totalPages, $page + 1);
@@ -172,6 +223,7 @@ include __DIR__ . '/partials/header.php';
                     </li>
                 </ul>
             </nav>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>
@@ -200,6 +252,10 @@ include __DIR__ . '/partials/header.php';
                     <div class="col-md-6">
                         <div class="text-muted small">Status</div>
                         <div class="fw-semibold" id="detailStatus"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Event Name</div>
+                        <div class="fw-semibold" id="detailEventName"></div>
                     </div>
                     <div class="col-md-6">
                         <div class="text-muted small">Institution/SDPK center</div>
@@ -251,10 +307,14 @@ include __DIR__ . '/partials/header.php';
         if (!trigger) {
             return;
         }
+        const statusValue = trigger.dataset.status || '-';
         document.getElementById('detailTicketId').textContent = trigger.dataset.ticketId || '-';
         document.getElementById('detailCreatedAt').textContent = trigger.dataset.createdAt || '-';
         document.getElementById('detailCategory').textContent = trigger.dataset.category || '-';
-        document.getElementById('detailStatus').textContent = trigger.dataset.status || '-';
+        document.getElementById('detailStatus').innerHTML = statusValue === '-'
+            ? '-'
+            : `<span class="badge ${statusValue === 'Resolved' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'}">${statusValue}</span>`;
+        document.getElementById('detailEventName').textContent = trigger.dataset.eventName || '-';
         document.getElementById('detailReference').textContent = trigger.dataset.reference || '-';
         document.getElementById('detailReported').textContent = trigger.dataset.reported || '-';
         document.getElementById('detailIssue').textContent = trigger.dataset.details || '-';
