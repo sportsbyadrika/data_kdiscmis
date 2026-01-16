@@ -24,9 +24,15 @@ require_once __DIR__ . '/../../src/users.php';
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
                 <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="/?group=Local+body">Local body</a></li>
-                <li class="nav-item"><a class="nav-link" href="/?group=Academic">Academic</a></li>
-                <li class="nav-item"><a class="nav-link" href="/?group=Kudumbasree">Kudumbasree</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Datasets</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/datasets.php">All Master Dataset</a></li>
+                        <li><a class="dropdown-item" href="/datasets.php?group=Local+body">Local body</a></li>
+                        <li><a class="dropdown-item" href="/datasets.php?group=Academic">Academic</a></li>
+                        <li><a class="dropdown-item" href="/datasets.php?group=Kudumbasree">Kudumbasree</a></li>
+                    </ul>
+                </li>
                 <li class="nav-item"><a class="nav-link" href="/blog.php">Blog</a></li>
                 <li class="nav-item"><a class="btn btn-success ms-lg-2" href="/ticket_status_check.php">Tickets</a></li>
                 <?php if (is_logged_in()): ?>
