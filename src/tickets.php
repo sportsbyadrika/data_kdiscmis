@@ -83,6 +83,22 @@ function fetch_ticket_list(
         $params[] = '%' . $searchFilters['mobile'] . '%';
     }
 
+    if (!empty($searchFilters['issue_id'])) {
+        $issueId = trim((string) $searchFilters['issue_id']);
+        if ($issueId !== '') {
+            if (ctype_digit($issueId)) {
+                $conditions[] = '(t.tracker_number = ? OR t.id = ?)';
+                $types .= 'si';
+                $params[] = $issueId;
+                $params[] = (int) $issueId;
+            } else {
+                $conditions[] = 't.tracker_number = ?';
+                $types .= 's';
+                $params[] = $issueId;
+            }
+        }
+    }
+
     $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
     $countQuery = "SELECT COUNT(*) AS total FROM tickets t {$where}";
@@ -95,7 +111,7 @@ function fetch_ticket_list(
 
     $offset = ($page - 1) * $perPage;
     $query = "SELECT t.id, t.tracker_number, t.created_at, t.reference_institution, t.reported_by, " .
-        "t.reported_mobile, t.issue_details, t.status, t.resolution_text, " .
+        "t.reported_mobile, t.reported_email, t.issue_details, t.status, t.resolution_text, " .
         "c.name AS category_name, d.name AS district_name " .
         "FROM tickets t " .
         "JOIN issue_categories c ON t.category_id = c.id " .
@@ -156,16 +172,17 @@ function create_ticket(mysqli $conn, array $payload, array $attachments): string
 
     try {
         $stmt = $conn->prepare(
-            'INSERT INTO tickets (category_id, district_id, reference_institution, reported_by, reported_mobile, issue_details) ' .
-            'VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO tickets (category_id, district_id, reference_institution, reported_by, reported_mobile, reported_email, issue_details) ' .
+            'VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->bind_param(
-            'iissss',
+            'iisssss',
             $payload['category_id'],
             $payload['district_id'],
             $payload['reference_institution'],
             $payload['reported_by'],
             $payload['reported_mobile'],
+            $payload['reported_email'],
             $payload['issue_details']
         );
         $stmt->execute();

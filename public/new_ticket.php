@@ -13,6 +13,7 @@ $formData = [
     'reference_institution' => '',
     'reported_by' => '',
     'reported_mobile' => '',
+    'reported_email' => '',
     'issue_details' => '',
 ];
 
@@ -22,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formData['reference_institution'] = trim($_POST['reference_institution'] ?? '');
     $formData['reported_by'] = trim($_POST['reported_by'] ?? '');
     $formData['reported_mobile'] = trim($_POST['reported_mobile'] ?? '');
+    $formData['reported_email'] = trim($_POST['reported_email'] ?? '');
     $formData['issue_details'] = trim($_POST['issue_details'] ?? '');
 
     if ($formData['category_id'] === '') {
@@ -38,6 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if ($formData['reported_mobile'] === '' || !preg_match('/^\d{10}$/', $formData['reported_mobile'])) {
         $errors[] = 'Please enter a valid 10-digit mobile number.';
+    }
+    if ($formData['reported_email'] === '' || !filter_var($formData['reported_email'], FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Please enter a valid email address.';
     }
     if ($formData['issue_details'] === '') {
         $errors[] = 'Please describe the issue details.';
@@ -86,10 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'reference_institution' => $formData['reference_institution'],
             'reported_by' => $formData['reported_by'],
             'reported_mobile' => $formData['reported_mobile'],
+            'reported_email' => $formData['reported_email'],
             'issue_details' => $formData['issue_details'],
         ], $uploadedAttachments);
 
-        header('Location: /tickets.php?new=' . urlencode($tracker));
+        header('Location: /ticket_status_check.php?new=' . urlencode($tracker));
         exit;
     }
 }
@@ -102,7 +108,7 @@ include __DIR__ . '/partials/header.php';
         <p class="text-muted">Capture a new issue and receive a tracker number for follow up.</p>
     </div>
     <div class="col-auto">
-        <a class="btn btn-outline-secondary" href="/tickets.php">Back to Tickets</a>
+        <a class="btn btn-outline-secondary" href="/ticket_status_check.php">Back to Ticket Status Check</a>
     </div>
 </div>
 
@@ -143,7 +149,7 @@ include __DIR__ . '/partials/header.php';
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Reference Institution</label>
+                    <label class="form-label">Institution/SDPK center</label>
                     <input class="form-control" name="reference_institution" value="<?php echo htmlspecialchars($formData['reference_institution']); ?>" required>
                 </div>
                 <div class="col-md-6">
@@ -153,6 +159,10 @@ include __DIR__ . '/partials/header.php';
                 <div class="col-md-6">
                     <label class="form-label">Reported By Mobile Number</label>
                     <input class="form-control" name="reported_mobile" value="<?php echo htmlspecialchars($formData['reported_mobile']); ?>" maxlength="10" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Reported By Email</label>
+                    <input class="form-control" type="email" name="reported_email" value="<?php echo htmlspecialchars($formData['reported_email']); ?>" required>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Issue Details</label>

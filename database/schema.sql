@@ -161,6 +161,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     reference_institution VARCHAR(200) NOT NULL,
     reported_by VARCHAR(150) NOT NULL,
     reported_mobile VARCHAR(20) NOT NULL,
+    reported_email VARCHAR(180) NOT NULL,
     issue_details TEXT NOT NULL,
     status ENUM('Pending','Resolved') NOT NULL DEFAULT 'Pending',
     resolution_text TEXT NULL,

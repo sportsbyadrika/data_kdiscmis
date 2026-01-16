@@ -34,3 +34,7 @@ body {
     background-color: #eef4ff;
     color: inherit;
 }
+
+.issue-details-cell {
+    max-width: 220px;
+}
