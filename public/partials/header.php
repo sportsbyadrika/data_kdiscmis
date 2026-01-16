@@ -28,7 +28,7 @@ require_once __DIR__ . '/../../src/users.php';
                 <li class="nav-item"><a class="nav-link" href="/?group=Academic">Academic</a></li>
                 <li class="nav-item"><a class="nav-link" href="/?group=Kudumbasree">Kudumbasree</a></li>
                 <li class="nav-item"><a class="nav-link" href="/blog.php">Blog</a></li>
-                <li class="nav-item"><a class="nav-link" href="/ticket_status_check.php">Tickets</a></li>
+                <li class="nav-item"><a class="btn btn-success ms-lg-2" href="/ticket_status_check.php">Tickets</a></li>
                 <?php if (is_logged_in()): ?>
                     <?php $navUser = current_user(); ?>
                     <?php $navChildRole = $navUser ? child_role_for($navUser['role']) : null; ?>

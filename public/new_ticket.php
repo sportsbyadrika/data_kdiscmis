@@ -37,13 +37,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($formData['reference_institution'] === '') {
         $errors[] = 'Please provide the reference institution.';
     }
+    if ($formData['event_name'] === '') {
+        $errors[] = 'Please enter the event name.';
+    }
     if ($formData['reported_by'] === '') {
         $errors[] = 'Please enter the reported by name.';
     }
     if ($formData['reported_mobile'] === '' || !preg_match('/^\d{10}$/', $formData['reported_mobile'])) {
         $errors[] = 'Please enter a valid 10-digit mobile number.';
     }
-    if ($formData['reported_email'] === '' || !filter_var($formData['reported_email'], FILTER_VALIDATE_EMAIL)) {
+    if ($formData['reported_email'] !== '' && !filter_var($formData['reported_email'], FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'Please enter a valid email address.';
     }
     if ($formData['issue_details'] === '') {
@@ -130,7 +133,7 @@ include __DIR__ . '/partials/header.php';
         <form method="post" enctype="multipart/form-data">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Category of Issue</label>
+                    <label class="form-label">Category of Issue <span class="text-danger">*</span></label>
                     <select class="form-select" name="category_id" required>
                         <option value="">Select a category</option>
                         <?php foreach ($categories as $category): ?>
@@ -141,7 +144,7 @@ include __DIR__ . '/partials/header.php';
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">District</label>
+                    <label class="form-label">District <span class="text-danger">*</span></label>
                     <select class="form-select" name="district_id" required>
                         <option value="">Select a district</option>
                         <?php foreach ($districts as $district): ?>
@@ -152,27 +155,27 @@ include __DIR__ . '/partials/header.php';
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Institution/SDPK center</label>
+                    <label class="form-label">Institution/SDPK center <span class="text-danger">*</span></label>
                     <input class="form-control" name="reference_institution" value="<?php echo htmlspecialchars($formData['reference_institution']); ?>" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Event Name</label>
-                    <input class="form-control" name="event_name" value="<?php echo htmlspecialchars($formData['event_name']); ?>">
+                    <label class="form-label">Event Name <span class="text-danger">*</span></label>
+                    <input class="form-control" name="event_name" value="<?php echo htmlspecialchars($formData['event_name']); ?>" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Reported By Name</label>
+                    <label class="form-label">Reported By Name <span class="text-danger">*</span></label>
                     <input class="form-control" name="reported_by" value="<?php echo htmlspecialchars($formData['reported_by']); ?>" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Reported By Mobile Number</label>
+                    <label class="form-label">Reported By Mobile Number <span class="text-danger">*</span></label>
                     <input class="form-control" name="reported_mobile" value="<?php echo htmlspecialchars($formData['reported_mobile']); ?>" maxlength="10" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Reported By Email</label>
-                    <input class="form-control" type="email" name="reported_email" value="<?php echo htmlspecialchars($formData['reported_email']); ?>" required>
+                    <input class="form-control" type="email" name="reported_email" value="<?php echo htmlspecialchars($formData['reported_email']); ?>">
                 </div>
                 <div class="col-12">
-                    <label class="form-label">Issue Details</label>
+                    <label class="form-label">Issue Details <span class="text-danger">*</span></label>
                     <textarea class="form-control" name="issue_details" rows="4" required><?php echo htmlspecialchars($formData['issue_details']); ?></textarea>
                 </div>
                 <div class="col-12">
