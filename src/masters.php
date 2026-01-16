@@ -306,3 +306,182 @@ function build_master_query(string $key, string $where): string
             return "SELECT id, name FROM districts {$where} ORDER BY name";
     }
 }
+
+function create_simple(mysqli $conn, string $table, string $name, string &$message): void
+{
+    $trimmed = trim($name);
+    if ($trimmed === '') {
+        return;
+    }
+    $stmt = $conn->prepare("INSERT INTO {$table} (name) VALUES (?)");
+    $stmt->bind_param('s', $trimmed);
+    $stmt->execute();
+    $message = ucfirst(str_replace('_', ' ', $table)) . ' entry added.';
+}
+
+function handle_master_creation(mysqli $conn, string $action, array $input, string $message, array $options): string
+{
+    switch ($action) {
+        case 'create_district':
+            create_simple($conn, 'districts', $input['name'] ?? '', $message);
+            break;
+        case 'create_local_body_type':
+            create_simple($conn, 'local_body_types', $input['name'] ?? '', $message);
+            break;
+        case 'create_block_panchayat':
+            create_simple($conn, 'block_panchayats', $input['name'] ?? '', $message);
+            break;
+        case 'create_local_body':
+            $lbCode = trim($input['lb_code'] ?? '');
+            $blockLbCode = trim($input['block_lb_code'] ?? '');
+            $name = trim($input['name'] ?? '');
+            $district = (int) ($input['district_id'] ?? 0);
+            $type = (int) ($input['local_body_type_id'] ?? 0);
+            if ($lbCode && $name && $district && $type) {
+                $blockLbValue = $blockLbCode !== '' ? $blockLbCode : null;
+                $stmt = $conn->prepare('INSERT INTO local_bodies (lb_code, block_lb_code, name, district_id, local_body_type_id) VALUES (?, ?, ?, ?, ?)');
+                $stmt->bind_param('sssii', $lbCode, $blockLbValue, $name, $district, $type);
+                $stmt->execute();
+                $message = 'Local body added.';
+            }
+            break;
+        case 'create_job_station':
+            $name = trim($input['name'] ?? '');
+            $district = (int) ($input['district_id'] ?? 0);
+            $block = (int) ($input['block_panchayat_id'] ?? 0);
+            $latitude = (float) ($input['latitude'] ?? 0);
+            $longitude = (float) ($input['longitude'] ?? 0);
+            if ($name && $district) {
+                $stmt = $conn->prepare('INSERT INTO job_stations (name, district_id, latitude, longitude, block_panchayat_id) VALUES (?, ?, ?, ?, ?)');
+                $stmt->bind_param('siddi', $name, $district, $latitude, $longitude, $block ?: null);
+                $stmt->execute();
+                $message = 'Job station added.';
+            }
+            break;
+        case 'create_facilitation_center':
+            $name = trim($input['name'] ?? '');
+            $district = (int) ($input['district_id'] ?? 0);
+            $block = (int) ($input['block_panchayat_id'] ?? 0);
+            $localBody = (int) ($input['local_body_id'] ?? 0);
+            $latitude = (float) ($input['latitude'] ?? 0);
+            $longitude = (float) ($input['longitude'] ?? 0);
+            if ($name && $district && $localBody) {
+                $blockValue = $block ?: null;
+                $stmt = $conn->prepare('INSERT INTO facilitation_centers (name, district_id, latitude, longitude, block_panchayat_id, local_body_id) VALUES (?, ?, ?, ?, ?, ?)');
+                $stmt->bind_param('siddii', $name, $district, $latitude, $longitude, $blockValue, $localBody);
+                $stmt->execute();
+                $message = 'Facilitation center added.';
+            }
+            break;
+        case 'create_qualification_category':
+            create_simple($conn, 'qualification_categories', $input['name'] ?? '', $message);
+            break;
+        case 'create_academic_authority':
+            $code = trim($input['code'] ?? '');
+            $name = trim($input['name'] ?? '');
+            $authorityType = trim($input['authority_type'] ?? '');
+            $districtId = (int) ($input['district_id'] ?? 0);
+            $localBodyCode = trim($input['local_body_code'] ?? '');
+            $website = trim($input['website'] ?? '');
+            $address = trim($input['address'] ?? '');
+            $latitude = ($input['latitude'] ?? '') !== '' ? (float) $input['latitude'] : null;
+            $longitude = ($input['longitude'] ?? '') !== '' ? (float) $input['longitude'] : null;
+            $yearEstablished = ($input['year_established'] ?? '') !== '' ? (int) $input['year_established'] : null;
+            $subCategory = trim($input['sub_category'] ?? '');
+            if ($code !== '' && $name !== '' && $authorityType !== '' && $districtId) {
+                $localBodyValue = $localBodyCode !== '' ? $localBodyCode : null;
+                $websiteValue = $website !== '' ? $website : null;
+                $addressValue = $address !== '' ? $address : null;
+                $subCategoryValue = $subCategory !== '' ? $subCategory : null;
+                $stmt = $conn->prepare(
+                    'INSERT INTO academic_authorities (code, name, authority_type, district_id, local_body_code, website, address, latitude, longitude, year_established, sub_category) ' .
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                );
+                $stmt->bind_param(
+                    'sssisssddis',
+                    $code,
+                    $name,
+                    $authorityType,
+                    $districtId,
+                    $localBodyValue,
+                    $websiteValue,
+                    $addressValue,
+                    $latitude,
+                    $longitude,
+                    $yearEstablished,
+                    $subCategoryValue
+                );
+                $stmt->execute();
+                $message = 'Academic authority added.';
+            }
+            break;
+        case 'create_institution':
+            $name = trim($input['name'] ?? '');
+            $district = (int) ($input['district_id'] ?? 0);
+            $qualificationCategory = (int) ($input['qualification_category'] ?? 0);
+            $type = trim($input['institution_type'] ?? '');
+            $latitude = (float) ($input['latitude'] ?? 0);
+            $longitude = (float) ($input['longitude'] ?? 0);
+            if ($name && $district) {
+                $qualificationValue = $qualificationCategory ?: null;
+                $stmt = $conn->prepare('INSERT INTO academic_institutions (name, district_id, latitude, longitude, qualification_category, institution_type) VALUES (?, ?, ?, ?, ?, ?)');
+                $stmt->bind_param('siddis', $name, $district, $latitude, $longitude, $qualificationValue, $type);
+                $stmt->execute();
+                $message = 'Academic institution added.';
+            }
+            break;
+        case 'create_course':
+            $name = trim($input['name'] ?? '');
+            $district = (int) ($input['district_id'] ?? 0);
+            $qualificationCategory = (int) ($input['qualification_category'] ?? 0);
+            if ($name && $district) {
+                $qualificationValue = $qualificationCategory ?: null;
+                $stmt = $conn->prepare('INSERT INTO education_courses (name, district_id, qualification_category) VALUES (?, ?, ?)');
+                $stmt->bind_param('sii', $name, $district, $qualificationValue);
+                $stmt->execute();
+                $message = 'Course/trade added.';
+            }
+            break;
+        case 'create_cds':
+            $name = trim($input['name'] ?? '');
+            $district = (int) ($input['district_id'] ?? 0);
+            $type = (int) ($input['local_body_type_id'] ?? 0);
+            if ($name && $district && $type) {
+                $stmt = $conn->prepare('INSERT INTO cds_list (name, district_id, local_body_type_id) VALUES (?, ?, ?)');
+                $stmt->bind_param('sii', $name, $district, $type);
+                $stmt->execute();
+                $message = 'CDS entry added.';
+            }
+            break;
+        case 'create_ads':
+            $name = trim($input['name'] ?? '');
+            $district = (int) ($input['district_id'] ?? 0);
+            $type = (int) ($input['local_body_type_id'] ?? 0);
+            $localBody = (int) ($input['local_body_id'] ?? 0);
+            if ($name && $district && $type && $localBody) {
+                $stmt = $conn->prepare('INSERT INTO ads_list (name, district_id, local_body_type_id, local_body_id) VALUES (?, ?, ?, ?)');
+                $stmt->bind_param('siii', $name, $district, $type, $localBody);
+                $stmt->execute();
+                $message = 'ADS entry added.';
+            }
+            break;
+        case 'create_sdpk_center':
+            $code = trim($input['code'] ?? '');
+            $name = trim($input['name'] ?? '');
+            $address = trim($input['address'] ?? '');
+            $district = (int) ($input['district_id'] ?? 0);
+            $latitude = (float) ($input['latitude'] ?? 0);
+            $longitude = (float) ($input['longitude'] ?? 0);
+            $activeStatus = ($input['active_status'] ?? '1') === '1' ? 1 : 0;
+
+            if ($code && $name && $address && $district) {
+                $stmt = $conn->prepare('INSERT INTO sdpk_centers (code, name, address, district_id, latitude, longitude, active_status) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                $stmt->bind_param('sssiddi', $code, $name, $address, $district, $latitude, $longitude, $activeStatus);
+                $stmt->execute();
+                $message = 'SDPK center added.';
+            }
+            break;
+    }
+
+    return $message;
+}
