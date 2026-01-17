@@ -8,6 +8,7 @@ $conn = db_connect();
 $user = current_user();
 $canManageMasters = $user && $user['role'] === ROLE_SUPER_ADMIN;
 $options = fetch_filter_options($conn);
+$teams = fetch_teams($conn);
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -17,11 +18,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'You do not have permission to manage master data.';
     } else {
         $action = $_POST['action'] ?? '';
-        $message = handle_master_creation($conn, $action, $_POST, $message, $options);
+        switch ($action) {
+            case 'create_team':
+                create_team($conn, $_POST['name'] ?? '', $message);
+                break;
+            case 'update_team':
+                update_team($conn, (int) ($_POST['team_id'] ?? 0), $_POST['name'] ?? '', $message);
+                break;
+            case 'delete_team':
+                delete_team($conn, (int) ($_POST['team_id'] ?? 0), $message);
+                break;
+            default:
+                $message = handle_master_creation($conn, $action, $_POST, $message, $options);
+        }
     }
 }
 
 $definitions = master_definitions();
+$teams = fetch_teams($conn);
 include __DIR__ . '/partials/header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -65,6 +79,7 @@ include __DIR__ . '/partials/header.php';
 <?php if ($canManageMasters): ?>
     <div class="row g-3">
         <div class="col-lg-6">
+            <?php include __DIR__ . '/partials/card_teams.php'; ?>
             <?php include __DIR__ . '/partials/card_geography.php'; ?>
             <?php include __DIR__ . '/partials/card_local_body.php'; ?>
             <?php include __DIR__ . '/partials/card_jobs.php'; ?>

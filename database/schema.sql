@@ -10,12 +10,42 @@ CREATE TABLE IF NOT EXISTS users (
     mobile VARCHAR(20) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('super_admin','state_user','district_user','localbody_user') NOT NULL DEFAULT 'localbody_user',
+    team_id INT NULL,
+    team_role ENUM('operator','verifier','approver') NOT NULL DEFAULT 'operator',
     district_id INT NULL,
     status ENUM('active','inactive') NOT NULL DEFAULT 'active',
     created_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_users_created_by FOREIGN KEY (created_by) REFERENCES users(id),
     CONSTRAINT fk_users_district FOREIGN KEY (district_id) REFERENCES districts(id)
+);
+
+CREATE TABLE IF NOT EXISTS teams (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL UNIQUE
+);
+
+ALTER TABLE users
+    ADD CONSTRAINT fk_users_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS user_functionalities (
+    user_id INT NOT NULL,
+    functionality VARCHAR(120) NOT NULL,
+    PRIMARY KEY (user_id, functionality),
+    CONSTRAINT fk_user_functionalities_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS applicants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    unique_id VARCHAR(120) NOT NULL UNIQUE,
+    name VARCHAR(180) NOT NULL,
+    mobile VARCHAR(20) NOT NULL,
+    email VARCHAR(180) NULL,
+    details_html MEDIUMTEXT NULL,
+    data_status VARCHAR(120) NOT NULL,
+    purpose VARCHAR(200) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS qualification_categories (
@@ -198,4 +228,13 @@ VALUES
     ('Data Correction', 'Request to correct or update master data'),
     ('Login Issue', 'Unable to access the portal or credentials not working'),
     ('System Bug', 'Unexpected errors or performance issues')
+ON DUPLICATE KEY UPDATE name = name;
+
+INSERT INTO teams (name)
+VALUES
+    ('Member Secretary Office'),
+    ('State CRM'),
+    ('Platform'),
+    ('Data'),
+    ('DSM')
 ON DUPLICATE KEY UPDATE name = name;
