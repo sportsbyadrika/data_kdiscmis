@@ -38,6 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasAccess) {
                 $callDate = $callDateTime->format('Y-m-d H:i:s');
                 if ($applicantId <= 0) {
                     $message = 'Select a valid applicant.';
+                } elseif (!in_array($crmStatus, $allowedStatuses, true)) {
+                    $message = 'Select a valid CRM status.';
                 } elseif ($callStatusId <= 0 || !in_array($callStatusId, $validCallStatusIds, true)) {
                     $message = 'Select a valid call status.';
                 } elseif (update_applicant_crm($conn, $applicantId, $crmStatus, $crmRemarks)) {
@@ -208,6 +210,7 @@ include __DIR__ . '/partials/header.php';
                                     <div class="col-md-6">
                                         <label class="form-label">CRM Status</label>
                                         <select name="crm_status" class="form-select" required>
+                                            <option value="" <?php echo in_array($selectedApplicant['crm_status'], $allowedStatuses, true) ? '' : 'selected'; ?>>Select status</option>
                                             <?php foreach ($allowedStatuses as $status): ?>
                                                 <option value="<?php echo htmlspecialchars($status); ?>" <?php echo $selectedApplicant['crm_status'] === $status ? 'selected' : ''; ?>>
                                                     <?php echo htmlspecialchars($status); ?>
