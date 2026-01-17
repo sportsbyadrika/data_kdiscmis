@@ -83,7 +83,7 @@ include __DIR__ . '/partials/header.php';
 
 <?php if ($user['role'] === ROLE_STATE_USER): ?>
     <div class="row g-3 mb-3">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <a class="card h-100 table-card text-decoration-none" href="/tickets_manage.php">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -99,13 +99,23 @@ include __DIR__ . '/partials/header.php';
             </a>
         </div>
         <?php if (in_array($user['team_role'] ?? '', ['verifier', 'approver'], true)): ?>
-            <div class="col-md-6">
-                <a class="card h-100 table-card text-decoration-none" href="/applicants_bulk_upload.php">
+            <div class="col-md-4">
+                <a class="card h-100 table-card text-decoration-none" href="/applicants.php">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="badge text-primary bg-light badge-outline">Applicants</span>
                         </div>
-                        <p class="text-muted small mb-0">Bulk upload applicant records with update support.</p>
+                        <p class="text-muted small mb-0">Review CRM status counts and bulk upload applicant records.</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a class="card h-100 table-card text-decoration-none" href="/crm.php">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge text-primary bg-light badge-outline">CRM</span>
+                        </div>
+                        <p class="text-muted small mb-0">Manage customer follow-ups, remarks, and call logs.</p>
                     </div>
                 </a>
             </div>

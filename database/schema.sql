@@ -44,8 +44,22 @@ CREATE TABLE IF NOT EXISTS applicants (
     details_html MEDIUMTEXT NULL,
     data_status VARCHAR(120) NOT NULL,
     purpose VARCHAR(200) NOT NULL,
+    crm_status VARCHAR(50) NOT NULL DEFAULT 'CRM Pending',
+    crm_remarks TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS applicant_crm_calls (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    applicant_id INT NOT NULL,
+    call_date DATE NOT NULL,
+    duration VARCHAR(50) NULL,
+    status VARCHAR(120) NULL,
+    remarks TEXT NULL,
+    contacted_by VARCHAR(150) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_applicant_crm_calls_applicant FOREIGN KEY (applicant_id) REFERENCES applicants(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS qualification_categories (

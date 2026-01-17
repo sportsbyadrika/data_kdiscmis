@@ -30,7 +30,7 @@ include __DIR__ . '/partials/header.php';
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <h1 class="h4 mb-1">Bulk Upload Applicants</h1>
-        <p class="text-muted mb-0">Upload applicant details with insert/update support on Unique ID.</p>
+        <p class="text-muted mb-0">Upload applicant details with insert/update support on Unique ID and CRM status.</p>
     </div>
     <a class="btn btn-outline-secondary" href="/admin.php">Back to Dashboard</a>
 </div>
