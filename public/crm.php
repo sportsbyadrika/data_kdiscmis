@@ -225,7 +225,7 @@ include __DIR__ . '/partials/header.php';
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Call Status</label>
-                                        <select name="call_status_id" class="form-select" <?php echo empty($callStatuses) ? 'disabled' : 'required'; ?>>
+                                        <select name="call_status_id" class="form-select" required>
                                             <option value="">Select status</option>
                                             <?php foreach ($callStatuses as $status): ?>
                                                 <option value="<?php echo (int) $status['id']; ?>">
@@ -233,6 +233,9 @@ include __DIR__ . '/partials/header.php';
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <?php if (empty($callStatuses)): ?>
+                                            <div class="small text-danger mt-1">Add call statuses in the master table to enable selection.</div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">CRM Remarks</label>
@@ -244,7 +247,7 @@ include __DIR__ . '/partials/header.php';
                                     </div>
                                     <div class="col-12">
                                         <div class="small text-muted mb-2">Contacted by: <?php echo htmlspecialchars($user['name'] ?? $user['mobile'] ?? ''); ?></div>
-                                        <button class="btn btn-primary" type="submit" <?php echo empty($callStatuses) ? 'disabled' : ''; ?>>
+                                        <button class="btn btn-primary" type="submit">
                                             Save CRM &amp; Call Record
                                         </button>
                                     </div>

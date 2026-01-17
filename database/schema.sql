@@ -259,3 +259,12 @@ VALUES
     ('Data'),
     ('DSM')
 ON DUPLICATE KEY UPDATE name = name;
+
+INSERT INTO call_statuses (name, status)
+VALUES
+    ('Connected', 'active'),
+    ('No Answer', 'active'),
+    ('Busy', 'active'),
+    ('Follow Up', 'active'),
+    ('Cancelled', 'active')
+ON DUPLICATE KEY UPDATE name = name;
