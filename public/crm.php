@@ -16,6 +16,9 @@ if ($statusFilter !== 'all' && !in_array($statusFilter, $allowedStatuses, true))
     $statusFilter = 'all';
 }
 
+$callStatuses = fetch_call_statuses($conn);
+$validCallStatusIds = array_map('intval', array_column($callStatuses, 'id'));
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasAccess) {
     if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
         $message = 'Invalid request token.';
@@ -26,28 +29,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasAccess) {
             case 'update_crm':
                 $crmStatus = (string) ($_POST['crm_status'] ?? '');
                 $crmRemarks = trim((string) ($_POST['crm_remarks'] ?? ''));
+                $callDateInput = trim((string) ($_POST['call_date'] ?? ''));
+                $duration = trim((string) ($_POST['duration'] ?? ''));
+                $callStatusId = (int) ($_POST['call_status_id'] ?? 0);
+                $callRemarks = trim((string) ($_POST['call_remarks'] ?? ''));
+                $contactedBy = (string) ($user['name'] ?? $user['mobile'] ?? '');
+                $callDateTime = DateTime::createFromFormat('Y-m-d\\TH:i', $callDateInput) ?: new DateTime();
+                $callDate = $callDateTime->format('Y-m-d H:i:s');
                 if ($applicantId <= 0) {
                     $message = 'Select a valid applicant.';
+                } elseif ($callStatusId <= 0 || !in_array($callStatusId, $validCallStatusIds, true)) {
+                    $message = 'Select a valid call status.';
                 } elseif (update_applicant_crm($conn, $applicantId, $crmStatus, $crmRemarks)) {
-                    $message = 'CRM details updated successfully.';
+                    if (create_applicant_call($conn, $applicantId, $callDate, $duration, $callStatusId, $callRemarks, $contactedBy)) {
+                        $message = 'CRM details and call record updated successfully.';
+                    } else {
+                        $message = 'CRM details updated, but call record could not be saved.';
+                    }
                 } else {
                     $message = 'Unable to update CRM details.';
-                }
-                break;
-            case 'add_call':
-                $callDate = trim((string) ($_POST['call_date'] ?? ''));
-                $duration = trim((string) ($_POST['duration'] ?? ''));
-                $callStatus = trim((string) ($_POST['call_status'] ?? ''));
-                $callRemarks = trim((string) ($_POST['call_remarks'] ?? ''));
-                $contactedBy = trim((string) ($_POST['contacted_by'] ?? ''));
-                if ($applicantId <= 0) {
-                    $message = 'Select a valid applicant.';
-                } elseif ($callDate === '') {
-                    $message = 'Call date is required.';
-                } elseif (create_applicant_call($conn, $applicantId, $callDate, $duration, $callStatus, $callRemarks, $contactedBy)) {
-                    $message = 'Call record added successfully.';
-                } else {
-                    $message = 'Unable to add call record.';
                 }
                 break;
         }
@@ -66,6 +66,7 @@ if ($selectedId === 0 && !empty($applicants)) {
 
 $selectedApplicant = $selectedId > 0 ? fetch_applicant_details($conn, $selectedId) : null;
 $callHistory = $selectedApplicant ? fetch_applicant_calls($conn, $selectedId) : [];
+$defaultCallDate = (new DateTime())->format('Y-m-d\\TH:i');
 
 include __DIR__ . '/partials/header.php';
 ?>
@@ -185,11 +186,21 @@ include __DIR__ . '/partials/header.php';
                                 <div class="small text-muted">Data Status</div>
                                 <div class="fw-semibold"><?php echo htmlspecialchars($selectedApplicant['data_status']); ?></div>
                             </div>
+                            <div class="col-12">
+                                <div class="small text-muted mb-1">Details</div>
+                                <div class="border rounded bg-light p-3">
+                                    <?php if (!empty($selectedApplicant['details_html'])): ?>
+                                        <?php echo $selectedApplicant['details_html']; ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">No detail content available.</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row g-4">
                             <div class="col-12">
-                                <h3 class="h6">Update CRM Status &amp; Remarks</h3>
+                                <h3 class="h6">Update CRM Status, Remarks &amp; Call Record</h3>
                                 <form method="post" class="row g-3">
                                     <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
                                     <input type="hidden" name="action" value="update_crm">
@@ -204,44 +215,38 @@ include __DIR__ . '/partials/header.php';
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label">Remarks</label>
-                                        <textarea name="crm_remarks" class="form-control" rows="3"><?php echo htmlspecialchars($selectedApplicant['crm_remarks'] ?? ''); ?></textarea>
-                                    </div>
-                                    <div class="col-12">
-                                        <button class="btn btn-primary" type="submit">Save CRM Details</button>
-                                    </div>
-                                </form>
-                            </div>
-
-                            <div class="col-12">
-                                <h3 class="h6">Add Call Record</h3>
-                                <form method="post" class="row g-3">
-                                    <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
-                                    <input type="hidden" name="action" value="add_call">
-                                    <input type="hidden" name="applicant_id" value="<?php echo (int) $selectedApplicant['id']; ?>">
                                     <div class="col-md-4">
                                         <label class="form-label">Date of call</label>
-                                        <input type="date" name="call_date" class="form-control" required>
+                                        <input type="datetime-local" name="call_date" class="form-control" value="<?php echo htmlspecialchars($defaultCallDate); ?>" required>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Duration</label>
                                         <input type="text" name="duration" class="form-control" placeholder="e.g., 15 min">
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Status</label>
-                                        <input type="text" name="call_status" class="form-control" placeholder="e.g., Connected">
+                                        <label class="form-label">Call Status</label>
+                                        <select name="call_status_id" class="form-select" <?php echo empty($callStatuses) ? 'disabled' : 'required'; ?>>
+                                            <option value="">Select status</option>
+                                            <?php foreach ($callStatuses as $status): ?>
+                                                <option value="<?php echo (int) $status['id']; ?>">
+                                                    <?php echo htmlspecialchars($status['name']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Contacted by</label>
-                                        <input type="text" name="contacted_by" class="form-control" placeholder="Team member name">
+                                        <label class="form-label">CRM Remarks</label>
+                                        <textarea name="crm_remarks" class="form-control" rows="3"><?php echo htmlspecialchars($selectedApplicant['crm_remarks'] ?? ''); ?></textarea>
                                     </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label">Remarks</label>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Call Remarks</label>
                                         <textarea name="call_remarks" class="form-control" rows="3" placeholder="Notes from the call"></textarea>
                                     </div>
                                     <div class="col-12">
-                                        <button class="btn btn-outline-primary" type="submit">Add Call Record</button>
+                                        <div class="small text-muted mb-2">Contacted by: <?php echo htmlspecialchars($user['name'] ?? $user['mobile'] ?? ''); ?></div>
+                                        <button class="btn btn-primary" type="submit" <?php echo empty($callStatuses) ? 'disabled' : ''; ?>>
+                                            Save CRM &amp; Call Record
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -257,7 +262,7 @@ include __DIR__ . '/partials/header.php';
                                                 <tr>
                                                     <th>Date</th>
                                                     <th>Duration</th>
-                                                    <th>Status</th>
+                                                    <th>Call Status</th>
                                                     <th>Contacted by</th>
                                                     <th>Remarks</th>
                                                 </tr>
@@ -267,7 +272,7 @@ include __DIR__ . '/partials/header.php';
                                                     <tr>
                                                         <td><?php echo htmlspecialchars($call['call_date']); ?></td>
                                                         <td><?php echo htmlspecialchars($call['duration'] ?? ''); ?></td>
-                                                        <td><?php echo htmlspecialchars($call['status'] ?? ''); ?></td>
+                                                        <td><?php echo htmlspecialchars($call['call_status_name'] ?? ''); ?></td>
                                                         <td><?php echo htmlspecialchars($call['contacted_by'] ?? ''); ?></td>
                                                         <td><?php echo htmlspecialchars($call['remarks'] ?? ''); ?></td>
                                                     </tr>

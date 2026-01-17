@@ -262,25 +262,27 @@ function update_applicant_crm(mysqli $conn, int $applicantId, string $crmStatus,
     return $stmt->execute();
 }
 
-function create_applicant_call(mysqli $conn, int $applicantId, string $callDate, string $duration, string $status, string $remarks, string $contactedBy): bool
+function create_applicant_call(mysqli $conn, int $applicantId, string $callDate, string $duration, int $callStatusId, string $remarks, string $contactedBy): bool
 {
     $stmt = $conn->prepare(
-        'INSERT INTO applicant_crm_calls (applicant_id, call_date, duration, status, remarks, contacted_by) ' .
+        'INSERT INTO applicant_crm_calls (applicant_id, call_date, duration, call_status_id, remarks, contacted_by) ' .
         'VALUES (?, ?, ?, ?, ?, ?)'
     );
     if (!$stmt) {
         return false;
     }
 
-    $stmt->bind_param('isssss', $applicantId, $callDate, $duration, $status, $remarks, $contactedBy);
+    $stmt->bind_param('ississ', $applicantId, $callDate, $duration, $callStatusId, $remarks, $contactedBy);
     return $stmt->execute();
 }
 
 function fetch_applicant_calls(mysqli $conn, int $applicantId): array
 {
     $stmt = $conn->prepare(
-        'SELECT call_date, duration, status, remarks, contacted_by, created_at ' .
-        'FROM applicant_crm_calls WHERE applicant_id = ? ORDER BY call_date DESC, created_at DESC'
+        'SELECT c.call_date, c.duration, cs.name AS call_status_name, c.remarks, c.contacted_by, c.created_at ' .
+        'FROM applicant_crm_calls c ' .
+        'LEFT JOIN call_statuses cs ON c.call_status_id = cs.id ' .
+        'WHERE c.applicant_id = ? ORDER BY c.call_date DESC, c.created_at DESC'
     );
     if (!$stmt) {
         return [];
@@ -289,6 +291,16 @@ function fetch_applicant_calls(mysqli $conn, int $applicantId): array
     $stmt->bind_param('i', $applicantId);
     $stmt->execute();
     $result = $stmt->get_result();
+    if (!$result) {
+        return [];
+    }
+
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_call_statuses(mysqli $conn): array
+{
+    $result = $conn->query('SELECT id, name FROM call_statuses WHERE status = "active" ORDER BY name');
     if (!$result) {
         return [];
     }
