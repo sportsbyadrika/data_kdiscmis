@@ -98,6 +98,18 @@ include __DIR__ . '/partials/header.php';
                 </div>
             </a>
         </div>
+        <?php if (in_array($user['team_role'] ?? '', ['verifier', 'approver'], true)): ?>
+            <div class="col-md-6">
+                <a class="card h-100 table-card text-decoration-none" href="/applicants_bulk_upload.php">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge text-primary bg-light badge-outline">Applicants</span>
+                        </div>
+                        <p class="text-muted small mb-0">Bulk upload applicant records with update support.</p>
+                    </div>
+                </a>
+            </div>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 

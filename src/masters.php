@@ -37,6 +37,7 @@ function fetch_filter_options(mysqli $conn): array
         'local_bodies' => fetch_named($conn, 'local_bodies'),
         'block_panchayats' => fetch_named($conn, 'block_panchayats'),
         'sdpk_phases' => fetch_distinct($conn, 'sdpk_centers', 'phase'),
+        'teams' => fetch_named($conn, 'teams'),
     ];
 }
 
@@ -65,6 +66,13 @@ function fetch_distinct(mysqli $conn, string $table, string $column): array
 function master_definitions(): array
 {
     return [
+        'teams' => [
+            'title' => 'Teams',
+            'group' => 'Administration',
+            'table' => 'teams',
+            'filters' => [],
+            'columns' => ['name' => 'Team name'],
+        ],
         'districts' => [
             'title' => 'Districts',
             'group' => 'Local body',
@@ -259,6 +267,8 @@ function fetch_master_rows(mysqli $conn, string $key, array $filters, string $se
 function build_master_query(string $key, string $where): string
 {
     switch ($key) {
+        case 'teams':
+            return "SELECT id, name FROM teams {$where} ORDER BY name";
         case 'local_bodies':
             return "SELECT lb.id, lb.lb_code, lb.block_lb_code, lb.name, d.name AS district_name, lbt.name AS type_name FROM local_bodies lb " .
                 "JOIN districts d ON lb.district_id = d.id " .
@@ -305,6 +315,65 @@ function build_master_query(string $key, string $where): string
         default:
             return "SELECT id, name FROM districts {$where} ORDER BY name";
     }
+}
+
+function fetch_teams(mysqli $conn): array
+{
+    return fetch_named($conn, 'teams');
+}
+
+function create_team(mysqli $conn, string $name, string &$message): void
+{
+    $trimmed = trim($name);
+    if ($trimmed === '') {
+        return;
+    }
+
+    try {
+        $stmt = $conn->prepare('INSERT INTO teams (name) VALUES (?)');
+        $stmt->bind_param('s', $trimmed);
+        $stmt->execute();
+        $message = 'Team created.';
+    } catch (mysqli_sql_exception $exception) {
+        if ($exception->getCode() === 1062) {
+            $message = 'This team already exists.';
+        } else {
+            $message = 'Unable to create team.';
+        }
+    }
+}
+
+function update_team(mysqli $conn, int $teamId, string $name, string &$message): void
+{
+    $trimmed = trim($name);
+    if ($teamId <= 0 || $trimmed === '') {
+        return;
+    }
+
+    try {
+        $stmt = $conn->prepare('UPDATE teams SET name = ? WHERE id = ?');
+        $stmt->bind_param('si', $trimmed, $teamId);
+        $stmt->execute();
+        $message = 'Team updated.';
+    } catch (mysqli_sql_exception $exception) {
+        if ($exception->getCode() === 1062) {
+            $message = 'This team already exists.';
+        } else {
+            $message = 'Unable to update team.';
+        }
+    }
+}
+
+function delete_team(mysqli $conn, int $teamId, string &$message): void
+{
+    if ($teamId <= 0) {
+        return;
+    }
+
+    $stmt = $conn->prepare('DELETE FROM teams WHERE id = ?');
+    $stmt->bind_param('i', $teamId);
+    $stmt->execute();
+    $message = 'Team deleted.';
 }
 
 function create_simple(mysqli $conn, string $table, string $name, string &$message): void

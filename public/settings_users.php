@@ -6,9 +6,12 @@ require_once __DIR__ . '/../src/users.php';
 require_auth();
 $conn = db_connect();
 $options = fetch_filter_options($conn);
+$teams = fetch_teams($conn);
 $user = current_user();
 $childRole = $user ? child_role_for($user['role']) : null;
 $message = '';
+$teamRoles = team_roles();
+$functionalityOptions = available_functionalities();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
@@ -66,6 +69,28 @@ include __DIR__ . '/partials/header.php';
                             <label class="form-label">Password</label>
                             <input type="password" name="password" class="form-control" required>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label">Team</label>
+                            <select name="team_id" class="form-select" required>
+                                <option value="">Select team</option>
+                                <?php foreach ($teams as $team): ?>
+                                    <option value="<?php echo (int) $team['id']; ?>">
+                                        <?php echo htmlspecialchars($team['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Team role</label>
+                            <select name="team_role" class="form-select" required>
+                                <option value="">Select role</option>
+                                <?php foreach ($teamRoles as $roleValue => $label): ?>
+                                    <option value="<?php echo htmlspecialchars($roleValue); ?>">
+                                        <?php echo htmlspecialchars($label); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                         <?php if ($requiresDistrict): ?>
                             <div class="col-12">
                                 <label class="form-label">District</label>
@@ -88,6 +113,20 @@ include __DIR__ . '/partials/header.php';
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Accessible functionalities</label>
+                            <div class="border rounded-3 p-2">
+                                <?php foreach ($functionalityOptions as $functionality): ?>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="functionalities[]" value="<?php echo htmlspecialchars($functionality); ?>" id="functionality-<?php echo md5($functionality); ?>">
+                                        <label class="form-check-label" for="functionality-<?php echo md5($functionality); ?>">
+                                            <?php echo htmlspecialchars($functionality); ?>
+                                        </label>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <small class="text-muted">Select at least one.</small>
                         </div>
                         <div class="col-12 d-flex justify-content-end">
                             <button class="btn btn-primary" type="submit">Create <?php echo htmlspecialchars(strtolower(role_label($childRole))); ?></button>
@@ -117,8 +156,12 @@ include __DIR__ . '/partials/header.php';
                                     <th scope="col">Mobile</th>
                                     <th scope="col">Email</th>
                                     <th scope="col">District</th>
+                                    <th scope="col">Team</th>
+                                    <th scope="col">Team role</th>
+                                    <th scope="col">Functionalities</th>
                                     <th scope="col">Status</th>
                                     <th scope="col">Created</th>
+                                    <th scope="col">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -128,6 +171,9 @@ include __DIR__ . '/partials/header.php';
                                         <td><?php echo htmlspecialchars($subUser['mobile']); ?></td>
                                         <td><?php echo htmlspecialchars($subUser['email']); ?></td>
                                         <td><?php echo htmlspecialchars($subUser['district_name'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($subUser['team_name'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars(team_role_label($subUser['team_role'] ?? '')); ?></td>
+                                        <td class="small text-muted"><?php echo htmlspecialchars($subUser['functionalities'] ?? ''); ?></td>
                                         <td>
                                             <?php if ($subUser['status'] === 'active'): ?>
                                                 <span class="badge bg-success-subtle text-success">Active</span>
@@ -136,11 +182,14 @@ include __DIR__ . '/partials/header.php';
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-muted small"><?php echo $subUser['created_at'] ? date('d M Y', strtotime($subUser['created_at'])) : '-'; ?></td>
+                                        <td>
+                                            <a class="btn btn-sm btn-outline-primary" href="/settings_user_edit.php?id=<?php echo (int) $subUser['id']; ?>">Edit</a>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                                 <?php if (empty($subUsers)): ?>
                                     <tr>
-                                        <td colspan="6" class="text-center py-4">No users found for this level.</td>
+                                        <td colspan="10" class="text-center py-4">No users found for this level.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>

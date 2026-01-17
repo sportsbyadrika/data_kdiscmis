@@ -52,7 +52,7 @@ function login(string $mobile, string $password): bool
 {
     $conn = db_connect();
     $stmt = $conn->prepare(
-        'SELECT id, name, email, mobile, password_hash, role, district_id, status FROM users WHERE mobile = ? LIMIT 1'
+        'SELECT id, name, email, mobile, password_hash, role, team_id, team_role, district_id, status FROM users WHERE mobile = ? LIMIT 1'
     );
     $stmt->bind_param('s', $mobile);
     $stmt->execute();
@@ -67,6 +67,8 @@ function login(string $mobile, string $password): bool
             'email' => $user['email'],
             'mobile' => $user['mobile'],
             'role' => $user['role'],
+            'team_id' => $user['team_id'] !== null ? (int) $user['team_id'] : null,
+            'team_role' => $user['team_role'],
             'district_id' => $user['district_id'] !== null ? (int) $user['district_id'] : null,
         ];
         return true;
