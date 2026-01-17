@@ -44,8 +44,29 @@ CREATE TABLE IF NOT EXISTS applicants (
     details_html MEDIUMTEXT NULL,
     data_status VARCHAR(120) NOT NULL,
     purpose VARCHAR(200) NOT NULL,
+    crm_status VARCHAR(50) NOT NULL DEFAULT 'CRM Pending',
+    crm_remarks TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS call_statuses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active'
+);
+
+CREATE TABLE IF NOT EXISTS applicant_crm_calls (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    applicant_id INT NOT NULL,
+    call_date DATETIME NOT NULL,
+    duration VARCHAR(50) NULL,
+    call_status_id INT NULL,
+    remarks TEXT NULL,
+    contacted_by VARCHAR(150) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_applicant_crm_calls_applicant FOREIGN KEY (applicant_id) REFERENCES applicants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_applicant_crm_calls_status FOREIGN KEY (call_status_id) REFERENCES call_statuses(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS qualification_categories (
@@ -237,4 +258,13 @@ VALUES
     ('Platform'),
     ('Data'),
     ('DSM')
+ON DUPLICATE KEY UPDATE name = name;
+
+INSERT INTO call_statuses (name, status)
+VALUES
+    ('Connected', 'active'),
+    ('No Answer', 'active'),
+    ('Busy', 'active'),
+    ('Follow Up', 'active'),
+    ('Cancelled', 'active')
 ON DUPLICATE KEY UPDATE name = name;
