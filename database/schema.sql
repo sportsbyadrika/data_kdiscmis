@@ -233,6 +233,27 @@ CREATE TABLE IF NOT EXISTS ticket_attachments (
     FOREIGN KEY (ticket_id) REFERENCES tickets(id)
 );
 
+CREATE TABLE IF NOT EXISTS job_fair_daily_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    meeting_date DATE NOT NULL,
+    meeting_number VARCHAR(120) NOT NULL,
+    job_fair_date DATE NULL,
+    locations_usual_sdpk INT NULL,
+    locations_additional INT NULL,
+    locational_functional_requirements TEXT NULL,
+    campaign_target TEXT NULL,
+    openings INT NULL,
+    remark_sectoral_preference TEXT NULL,
+    remark_impact_planned TEXT NULL,
+    minutes_file_name VARCHAR(255) NULL,
+    minutes_file_path VARCHAR(255) NULL,
+    minutes_file_type VARCHAR(50) NULL,
+    members_participated TEXT NULL,
+    job_fair_number VARCHAR(120) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 INSERT INTO users (name, email, mobile, password_hash, role, status)
 VALUES (
     'Super Admin',
