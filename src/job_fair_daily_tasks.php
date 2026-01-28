@@ -133,7 +133,7 @@ function create_job_fair_daily_task(mysqli $conn, array $data, ?array $file, arr
     $minutesType = $minutes['file_type'] ?? null;
 
     $stmt->bind_param(
-        'sssiisssisssssss',
+        'sssiississsssss',
         $meetingDate,
         $meetingNumber,
         $jobFairDate,
@@ -186,7 +186,7 @@ function update_job_fair_daily_task(mysqli $conn, int $taskId, array $data, ?arr
         'job_fair_number = ? WHERE id = ?'
     );
     $stmt->bind_param(
-        'sssiisssisssssssi',
+        'sssiississsssssi',
         $meetingDate,
         $meetingNumber,
         $jobFairDate,
