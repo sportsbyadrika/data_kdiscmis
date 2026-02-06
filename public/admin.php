@@ -130,7 +130,7 @@ include __DIR__ . '/partials/header.php';
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="badge text-primary bg-light badge-outline">Job Fair</span>
                 </div>
-                <p class="text-muted small mb-0">Plan and track job fair daily tasks and committee meeting notes.</p>
+                <p class="text-muted small mb-0">Plan and track job fair strategy meetings and committee notes.</p>
             </div>
         </a>
     </div>

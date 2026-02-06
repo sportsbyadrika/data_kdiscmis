@@ -38,7 +38,6 @@ require_once __DIR__ . '/../../src/users.php';
                 <?php if (is_logged_in()): ?>
                     <?php $navUser = current_user(); ?>
                     <?php $navChildRole = $navUser ? child_role_for($navUser['role']) : null; ?>
-                    <li class="nav-item"><a class="nav-link" href="/job_fair_daily_tasks.php">Job Fair</a></li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Settings</a>
                         <ul class="dropdown-menu dropdown-menu-end">
