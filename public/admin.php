@@ -123,6 +123,19 @@ include __DIR__ . '/partials/header.php';
     </div>
 <?php endif; ?>
 
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <a class="card h-100 table-card text-decoration-none" href="/job_fair_daily_tasks.php">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge text-primary bg-light badge-outline">Job Fair</span>
+                </div>
+                <p class="text-muted small mb-0">Plan and track job fair strategy meetings and committee notes.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
 <div class="row g-3">
     <div class="col-12">
         <div class="card table-card">
