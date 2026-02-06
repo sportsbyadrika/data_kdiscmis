@@ -158,6 +158,7 @@ include __DIR__ . '/partials/header.php';
                     $row['institution_type'] ?? null,
                     $row['authority_type'] ?? null,
                     $row['sub_category'] ?? null,
+                    !empty($row['center_type']) ? 'Center type: ' . $row['center_type'] : null,
                     !empty($row['address']) ? 'Address: ' . $row['address'] : null,
                     !empty($row['phase']) ? 'Phase: ' . $row['phase'] : null,
                     !empty($row['website']) ? 'Website: ' . $row['website'] : null,

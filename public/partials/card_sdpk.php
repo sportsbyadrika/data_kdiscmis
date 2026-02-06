@@ -12,6 +12,10 @@
                 <label class="form-label">Center Name</label>
                 <input type="text" name="name" class="form-control" required>
             </div>
+            <div class="col-md-6">
+                <label class="form-label">Center Type</label>
+                <input type="text" name="center_type" class="form-control" maxlength="5" placeholder="Type code">
+            </div>
             <div class="col-12">
                 <label class="form-label">Address</label>
                 <textarea name="address" class="form-control" rows="2" required></textarea>
