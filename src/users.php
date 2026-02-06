@@ -44,6 +44,7 @@ function available_functionalities(): array
         'Applicant details',
         'Tickets',
         'Files',
+        'Job Fair',
     ];
 }
 
