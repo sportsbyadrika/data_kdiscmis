@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS sdpk_centers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
+    center_type VARCHAR(5) NULL,
     address VARCHAR(255) NOT NULL,
     district_id INT NOT NULL,
     latitude DECIMAL(10, 6) NOT NULL,
@@ -187,6 +188,27 @@ CREATE TABLE IF NOT EXISTS sdpk_centers (
     phase TINYINT(2) NOT NULL DEFAULT 1,
     active_status TINYINT(1) NOT NULL DEFAULT 1,
     FOREIGN KEY (district_id) REFERENCES districts(id)
+);
+
+CREATE TABLE IF NOT EXISTS job_fair_intends (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    intend_date DATE NOT NULL,
+    reference_committee_number VARCHAR(120) NOT NULL,
+    reference_date DATE NULL,
+    reference_job_fair_number VARCHAR(120) NOT NULL,
+    job_fair_date DATE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS job_fair_intend_locations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    intend_id INT NOT NULL,
+    location_type VARCHAR(80) NOT NULL,
+    sdpk_center_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (intend_id) REFERENCES job_fair_intends(id) ON DELETE CASCADE,
+    FOREIGN KEY (sdpk_center_id) REFERENCES sdpk_centers(id)
 );
 
 CREATE TABLE IF NOT EXISTS blog_posts (

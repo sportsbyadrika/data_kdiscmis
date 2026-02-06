@@ -115,6 +115,7 @@ function master_definitions(): array
             'columns' => [
                 'code' => 'Code',
                 'name' => 'Center Name',
+                'center_type' => 'Center Type',
                 'address' => 'Address',
                 'district_name' => 'District',
                 'phase' => 'Phase',
@@ -283,7 +284,7 @@ function build_master_query(string $key, string $where): string
                 "LEFT JOIN block_panchayats bp ON fc.block_panchayat_id = bp.id " .
                 "JOIN local_bodies lb ON fc.local_body_id = lb.id {$where} ORDER BY fc.name";
         case 'sdpk_centers':
-            return "SELECT sc.id, sc.code, sc.name, sc.address, sc.latitude, sc.longitude, sc.phase, sc.active_status, " .
+            return "SELECT sc.id, sc.code, sc.name, sc.center_type, sc.address, sc.latitude, sc.longitude, sc.phase, sc.active_status, " .
                 "CASE WHEN sc.active_status = 1 THEN 'Active' ELSE 'Inactive' END AS active_status_label, d.name AS district_name " .
                 "FROM sdpk_centers sc JOIN districts d ON sc.district_id = d.id {$where} ORDER BY sc.name";
         case 'qualification_categories':
@@ -537,6 +538,7 @@ function handle_master_creation(mysqli $conn, string $action, array $input, stri
         case 'create_sdpk_center':
             $code = trim($input['code'] ?? '');
             $name = trim($input['name'] ?? '');
+            $centerType = trim($input['center_type'] ?? '');
             $address = trim($input['address'] ?? '');
             $district = (int) ($input['district_id'] ?? 0);
             $latitude = (float) ($input['latitude'] ?? 0);
@@ -544,8 +546,9 @@ function handle_master_creation(mysqli $conn, string $action, array $input, stri
             $activeStatus = ($input['active_status'] ?? '1') === '1' ? 1 : 0;
 
             if ($code && $name && $address && $district) {
-                $stmt = $conn->prepare('INSERT INTO sdpk_centers (code, name, address, district_id, latitude, longitude, active_status) VALUES (?, ?, ?, ?, ?, ?, ?)');
-                $stmt->bind_param('sssiddi', $code, $name, $address, $district, $latitude, $longitude, $activeStatus);
+                $centerTypeValue = $centerType !== '' ? $centerType : null;
+                $stmt = $conn->prepare('INSERT INTO sdpk_centers (code, name, center_type, address, district_id, latitude, longitude, active_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->bind_param('ssssiddi', $code, $name, $centerTypeValue, $address, $district, $latitude, $longitude, $activeStatus);
                 $stmt->execute();
                 $message = 'SDPK center added.';
             }

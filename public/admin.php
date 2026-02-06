@@ -125,14 +125,18 @@ include __DIR__ . '/partials/header.php';
 
 <div class="row g-3 mb-3">
     <div class="col-md-4">
-        <a class="card h-100 table-card text-decoration-none" href="/job_fair_daily_tasks.php">
-            <div class="card-body">
+        <div class="card h-100 table-card">
+            <div class="card-body d-flex flex-column">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="badge text-primary bg-light badge-outline">Job Fair</span>
                 </div>
-                <p class="text-muted small mb-0">Plan and track job fair strategy meetings and committee notes.</p>
+                <p class="text-muted small mb-3">Plan, capture, and track job fair strategy meetings and intend details.</p>
+                <div class="d-flex flex-wrap gap-2 mt-auto">
+                    <a class="btn btn-sm btn-outline-primary" href="/job_fair_daily_tasks.php">Strategy Meetings</a>
+                    <a class="btn btn-sm btn-primary" href="/job_fair_intends.php">Job Fair Intend</a>
+                </div>
             </div>
-        </a>
+        </div>
     </div>
 </div>
 
