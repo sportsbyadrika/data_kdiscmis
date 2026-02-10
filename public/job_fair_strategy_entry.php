@@ -21,6 +21,16 @@ if ($editId > 0) {
     }
 }
 
+
+if ($editTask && !empty($editTask['job_fair_number'])) {
+    $linkedIntendId = fetch_latest_intend_id_by_job_fair_number($conn, (string) $editTask['job_fair_number']);
+    if ($linkedIntendId > 0) {
+        $aggregators = fetch_selected_aggregators_for_intend($conn, $linkedIntendId);
+        $employers = fetch_selected_employers_for_intend($conn, $linkedIntendId);
+        $jobTitles = fetch_selected_job_titles_for_intend($conn, $linkedIntendId);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid request token.';
