@@ -324,3 +324,245 @@ function log_job_title_dsm_activity(mysqli $conn, array $data): void
     );
     $stmt->execute();
 }
+
+function fetch_dsm_task_types(mysqli $conn): array
+{
+    $result = $conn->query("SELECT id, name FROM dsm_task_types WHERE status = 'active' ORDER BY name");
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_employers_by_aggregator_for_dsm(mysqli $conn, ?int $aggregatorId): array
+{
+    if (!$aggregatorId) {
+        return [];
+    }
+
+    $stmt = $conn->prepare('SELECT id, name, code FROM employers WHERE aggregator_id = ? ORDER BY name');
+    $stmt->bind_param('i', $aggregatorId);
+    $stmt->execute();
+
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_job_titles_by_employer_for_dsm(mysqli $conn, ?int $employerId): array
+{
+    if (!$employerId) {
+        return [];
+    }
+
+    $stmt = $conn->prepare('SELECT id, job_title, job_code FROM job_titles WHERE employer_id = ? ORDER BY job_title');
+    $stmt->bind_param('i', $employerId);
+    $stmt->execute();
+
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_dsm_daily_tasks(mysqli $conn, array $filters): array
+{
+    $conditions = [];
+    $params = [];
+    $types = '';
+
+    $dateFrom = trim($filters['date_from'] ?? '');
+    if ($dateFrom !== '') {
+        $conditions[] = 't.task_date >= ?';
+        $types .= 's';
+        $params[] = $dateFrom;
+    }
+
+    $dateTo = trim($filters['date_to'] ?? '');
+    if ($dateTo !== '') {
+        $conditions[] = 't.task_date <= ?';
+        $types .= 's';
+        $params[] = $dateTo;
+    }
+
+    $jobFairNumber = trim($filters['job_fair_number'] ?? '');
+    if ($jobFairNumber !== '') {
+        $conditions[] = 't.job_fair_number LIKE ?';
+        $types .= 's';
+        $params[] = '%' . $jobFairNumber . '%';
+    }
+
+    $employerName = trim($filters['employer_name'] ?? '');
+    if ($employerName !== '') {
+        $conditions[] = 'e.name LIKE ?';
+        $types .= 's';
+        $params[] = '%' . $employerName . '%';
+    }
+
+    $jobTitle = trim($filters['job_title'] ?? '');
+    if ($jobTitle !== '') {
+        $conditions[] = 'jt.job_title LIKE ?';
+        $types .= 's';
+        $params[] = '%' . $jobTitle . '%';
+    }
+
+    $meetingOwner = trim($filters['meeting_owner'] ?? '');
+    if ($meetingOwner !== '') {
+        $conditions[] = 't.meeting_owner LIKE ?';
+        $types .= 's';
+        $params[] = '%' . $meetingOwner . '%';
+    }
+
+    $whereClause = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+    $sql = 'SELECT t.id, t.task_date, tt.name AS task_type_name, t.task_title, t.result ' .
+        'FROM dsm_daily_tasks t ' .
+        'JOIN dsm_task_types tt ON t.task_type_id = tt.id ' .
+        'LEFT JOIN employers e ON t.employer_id = e.id ' .
+        'LEFT JOIN job_titles jt ON t.job_title_id = jt.id ' .
+        "{$whereClause} ORDER BY t.task_date DESC, t.id DESC";
+
+    $stmt = $conn->prepare($sql);
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_dsm_daily_task_by_id(mysqli $conn, int $taskId): ?array
+{
+    $stmt = $conn->prepare('SELECT * FROM dsm_daily_tasks WHERE id = ? LIMIT 1');
+    $stmt->bind_param('i', $taskId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+
+    return $row ?: null;
+}
+
+function create_dsm_daily_task(mysqli $conn, array $data, int $userId, array &$errors): void
+{
+    $taskDate = $data['task_date'] ?? '';
+    $taskTypeId = (int) ($data['task_type_id'] ?? 0);
+    $taskTitle = trim($data['task_title'] ?? '');
+
+    if ($taskDate === '') {
+        $errors[] = 'Date is required.';
+    }
+    if ($taskTypeId <= 0) {
+        $errors[] = 'Task type is required.';
+    }
+    if ($taskTitle === '') {
+        $errors[] = 'Task title is required.';
+    }
+    if (!empty($errors)) {
+        return;
+    }
+
+    $taskDetails = trim($data['task_details'] ?? '');
+    $jobFairNumber = trim($data['job_fair_number'] ?? '');
+    $aggregatorId = ($data['aggregator_id'] ?? '') !== '' ? (int) $data['aggregator_id'] : null;
+    $employerId = ($data['employer_id'] ?? '') !== '' ? (int) $data['employer_id'] : null;
+    $jobTitleId = ($data['job_title_id'] ?? '') !== '' ? (int) $data['job_title_id'] : null;
+    $meetingOwner = trim($data['meeting_owner'] ?? '');
+    $meetingMembers = trim($data['meeting_members'] ?? '');
+    $duration = trim($data['duration'] ?? '');
+    $result = in_array(($data['result'] ?? ''), ['Closed', 'Pending', 'Cancelled'], true) ? $data['result'] : 'Pending';
+    $resultDetails = trim($data['result_details'] ?? '');
+    $callStatus = in_array(($data['call_status'] ?? ''), ['Connected', 'Not responding', 'Rescheduled'], true) ? $data['call_status'] : null;
+
+    $stmt = $conn->prepare(
+        'INSERT INTO dsm_daily_tasks ' .
+        '(task_date, task_type_id, task_title, task_details, job_fair_number, aggregator_id, employer_id, job_title_id, meeting_owner, meeting_members, duration, result, result_details, call_status, created_by_user_id, updated_by_user_id) ' .
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    $stmt->bind_param(
+        'sisssiiissssssii',
+        $taskDate,
+        $taskTypeId,
+        $taskTitle,
+        $taskDetails,
+        $jobFairNumber,
+        $aggregatorId,
+        $employerId,
+        $jobTitleId,
+        $meetingOwner,
+        $meetingMembers,
+        $duration,
+        $result,
+        $resultDetails,
+        $callStatus,
+        $userId,
+        $userId
+    );
+    $stmt->execute();
+}
+
+function update_dsm_daily_task(mysqli $conn, int $taskId, array $data, int $userId, array &$errors): void
+{
+    $existing = fetch_dsm_daily_task_by_id($conn, $taskId);
+    if (!$existing) {
+        $errors[] = 'Task not found.';
+        return;
+    }
+
+    $taskDate = $data['task_date'] ?? '';
+    $taskTypeId = (int) ($data['task_type_id'] ?? 0);
+    $taskTitle = trim($data['task_title'] ?? '');
+
+    if ($taskDate === '') {
+        $errors[] = 'Date is required.';
+    }
+    if ($taskTypeId <= 0) {
+        $errors[] = 'Task type is required.';
+    }
+    if ($taskTitle === '') {
+        $errors[] = 'Task title is required.';
+    }
+    if (!empty($errors)) {
+        return;
+    }
+
+    $taskDetails = trim($data['task_details'] ?? '');
+    $jobFairNumber = trim($data['job_fair_number'] ?? '');
+    $aggregatorId = ($data['aggregator_id'] ?? '') !== '' ? (int) $data['aggregator_id'] : null;
+    $employerId = ($data['employer_id'] ?? '') !== '' ? (int) $data['employer_id'] : null;
+    $jobTitleId = ($data['job_title_id'] ?? '') !== '' ? (int) $data['job_title_id'] : null;
+    $meetingOwner = trim($data['meeting_owner'] ?? '');
+    $meetingMembers = trim($data['meeting_members'] ?? '');
+    $duration = trim($data['duration'] ?? '');
+    $result = in_array(($data['result'] ?? ''), ['Closed', 'Pending', 'Cancelled'], true) ? $data['result'] : 'Pending';
+    $resultDetails = trim($data['result_details'] ?? '');
+    $callStatus = in_array(($data['call_status'] ?? ''), ['Connected', 'Not responding', 'Rescheduled'], true) ? $data['call_status'] : null;
+
+    $stmt = $conn->prepare(
+        'UPDATE dsm_daily_tasks SET task_date = ?, task_type_id = ?, task_title = ?, task_details = ?, job_fair_number = ?, ' .
+        'aggregator_id = ?, employer_id = ?, job_title_id = ?, meeting_owner = ?, meeting_members = ?, duration = ?, result = ?, result_details = ?, call_status = ?, updated_by_user_id = ? ' .
+        'WHERE id = ?'
+    );
+    $stmt->bind_param(
+        'sisssiiissssssii',
+        $taskDate,
+        $taskTypeId,
+        $taskTitle,
+        $taskDetails,
+        $jobFairNumber,
+        $aggregatorId,
+        $employerId,
+        $jobTitleId,
+        $meetingOwner,
+        $meetingMembers,
+        $duration,
+        $result,
+        $resultDetails,
+        $callStatus,
+        $userId,
+        $taskId
+    );
+    $stmt->execute();
+}
+
+function fetch_all_employers_for_dsm(mysqli $conn): array
+{
+    $result = $conn->query('SELECT id, name, aggregator_id FROM employers ORDER BY name');
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_all_job_titles_for_dsm(mysqli $conn): array
+{
+    $result = $conn->query('SELECT id, job_title, employer_id FROM job_titles ORDER BY job_title');
+    return $result->fetch_all(MYSQLI_ASSOC);
+}

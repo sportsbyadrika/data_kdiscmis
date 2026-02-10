@@ -312,6 +312,49 @@ CREATE TABLE IF NOT EXISTS dsm_job_title_activity_logs (
     FOREIGN KEY (changed_by_user_id) REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS dsm_task_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL UNIQUE,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active'
+);
+
+INSERT IGNORE INTO dsm_task_types (name, status) VALUES
+    ('New Employer', 'active'),
+    ('Employer details edit', 'active'),
+    ('New Job title', 'active'),
+    ('Modify Job details', 'active'),
+    ('Employer meetings', 'active'),
+    ('Aggregator meetings', 'active'),
+    ('Team meetings', 'active');
+
+CREATE TABLE IF NOT EXISTS dsm_daily_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_date DATE NOT NULL,
+    task_type_id INT NOT NULL,
+    task_title VARCHAR(255) NOT NULL,
+    task_details TEXT NULL,
+    job_fair_number VARCHAR(120) NULL,
+    aggregator_id INT NULL,
+    employer_id INT NULL,
+    job_title_id INT NULL,
+    meeting_owner VARCHAR(150) NULL,
+    meeting_members TEXT NULL,
+    duration VARCHAR(50) NULL,
+    result ENUM('Closed','Pending','Cancelled') NOT NULL DEFAULT 'Pending',
+    result_details TEXT NULL,
+    call_status ENUM('Connected','Not responding','Rescheduled') NULL,
+    created_by_user_id INT NOT NULL,
+    updated_by_user_id INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_type_id) REFERENCES dsm_task_types(id),
+    FOREIGN KEY (aggregator_id) REFERENCES aggregators(id),
+    FOREIGN KEY (employer_id) REFERENCES employers(id),
+    FOREIGN KEY (job_title_id) REFERENCES job_titles(id),
+    FOREIGN KEY (created_by_user_id) REFERENCES users(id),
+    FOREIGN KEY (updated_by_user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS blog_posts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
