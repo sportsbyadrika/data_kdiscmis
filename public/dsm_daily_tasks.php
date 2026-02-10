@@ -39,6 +39,12 @@ if (isset($_GET['task_created'])) {
 if (isset($_GET['task_updated'])) {
     $message = 'Daily task updated successfully.';
 }
+if (isset($_GET['task_created'])) {
+    $message = 'Daily task created successfully.';
+}
+if (isset($_GET['task_updated'])) {
+    $message = 'Daily task updated successfully.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
@@ -115,6 +121,17 @@ $filters = [
 $tasks = fetch_dsm_daily_tasks($conn, $filters);
 
 
+$filters = [
+    'date_from' => $_GET['date_from'] ?? '',
+    'date_to' => $_GET['date_to'] ?? '',
+    'job_fair_number' => trim($_GET['job_fair_number'] ?? ''),
+    'employer_name' => trim($_GET['employer_name'] ?? ''),
+    'job_title' => trim($_GET['job_title'] ?? ''),
+    'meeting_owner' => trim($_GET['meeting_owner'] ?? ''),
+];
+$tasks = fetch_dsm_daily_tasks($conn, $filters);
+
+
 include __DIR__ . '/partials/header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -141,7 +158,7 @@ include __DIR__ . '/partials/header.php';
     </div>
 <?php endif; ?>
 
-<?php if (($process ?? '') === ''): ?>
+<?php if (($process ?? '') === '') { ?>
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <h2 class="h5 mb-3">Select Process</h2>
@@ -188,34 +205,6 @@ include __DIR__ . '/partials/header.php';
                     <button class="btn btn-primary" type="submit">Apply</button>
                 </div>
             </div>
-            <?php if (empty($tasks)): ?>
-                <div class="alert alert-info mb-0">No daily tasks found for selected filters.</div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Date</th>
-                            <th>Task type</th>
-                            <th>Task title</th>
-                            <th>Result</th>
-                            <th></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($tasks as $task): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($task['task_date']); ?></td>
-                                <td><?php echo htmlspecialchars($task['task_type_name']); ?></td>
-                                <td><?php echo htmlspecialchars($task['task_title']); ?></td>
-                                <td><?php echo htmlspecialchars($task['result']); ?></td>
-                                <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/dsm_daily_task_entry.php?task_id=<?php echo (int) $task['id']; ?>">Edit</a></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
         </div>
     </form>
 
@@ -255,7 +244,7 @@ include __DIR__ . '/partials/header.php';
             <?php endif; ?>
         </div>
     </div>
-<?php elseif (($process ?? '') === 'new_employer'): ?>
+<?php } elseif (($process ?? '') === 'new_employer') { ?>
 
     <div class="card border-0 shadow-sm">
         <div class="card-body">
@@ -322,7 +311,7 @@ include __DIR__ . '/partials/header.php';
             </form>
         </div>
     </div>
-<?php elseif (($process ?? '') === 'edit_employer'): ?>
+<?php } elseif (($process ?? '') === 'edit_employer') { ?>
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body">
             <h2 class="h5 mb-3">Edit employer</h2>
@@ -402,7 +391,7 @@ include __DIR__ . '/partials/header.php';
             </div>
         </div>
     <?php endif; ?>
-<?php elseif (($process ?? '') === 'new_job_title'): ?>
+<?php } elseif (($process ?? '') === 'new_job_title') { ?>
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             <h2 class="h5 mb-3">New job title</h2>
@@ -432,7 +421,7 @@ include __DIR__ . '/partials/header.php';
             </form>
         </div>
     </div>
-<?php elseif (($process ?? '') === 'edit_job_title'): ?>
+<?php } elseif (($process ?? '') === 'edit_job_title') { ?>
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body">
             <h2 class="h5 mb-3">Edit job title</h2>
@@ -494,7 +483,7 @@ include __DIR__ . '/partials/header.php';
             </div>
         </div>
     <?php } ?>
-<?php endif; ?>
+<?php } ?>
 
 <?php include __DIR__ . '/partials/footer.php'; ?>
 
