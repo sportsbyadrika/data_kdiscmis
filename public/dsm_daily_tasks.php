@@ -487,11 +487,10 @@ include __DIR__ . '/partials/header.php';
                                 <a class="btn btn-sm btn-outline-primary" href="/dsm_daily_tasks.php?mode=edit&task_id=<?php echo (int) $task['id']; ?>">Edit</a>
                             </td>
                         </tr>
-                    <?php } ?>
                     </tbody>
                 </table>
             </div>
-        <?php endif; ?>
+        <?php } ?>
     </div>
     <?php if ($selectedJobTitle) { ?>
         <div class="card border-0 shadow-sm">
@@ -529,4 +528,3 @@ include __DIR__ . '/partials/header.php';
 <?php } ?>
 
 <?php include __DIR__ . '/partials/footer.php'; ?>
-
