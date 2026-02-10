@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../src/auth.php';
 require_once __DIR__ . '/../src/job_fair_daily_tasks.php';
+require_once __DIR__ . '/../src/job_fair_intends.php';
 require_once __DIR__ . '/../src/masters.php';
 require_once __DIR__ . '/../src/users.php';
 
@@ -16,6 +17,7 @@ $officers = fetch_active_officers($conn);
 $aggregators = [];
 $employers = [];
 $jobTitles = [];
+$linkedIntendId = 0;
 
 if ($editId > 0) {
     $stmt = $conn->prepare('SELECT * FROM job_fair_daily_tasks WHERE id = ?');
@@ -25,6 +27,16 @@ if ($editId > 0) {
     $editTask = $result->fetch_assoc() ?: null;
     if (!$editTask) {
         $errors[] = 'Unable to find the selected strategy meeting.';
+    }
+}
+
+
+if ($editTask && !empty($editTask['job_fair_number'])) {
+    $linkedIntendId = fetch_latest_intend_id_by_job_fair_number($conn, (string) $editTask['job_fair_number']);
+    if ($linkedIntendId > 0) {
+        $aggregators = fetch_selected_aggregators_for_intend($conn, $linkedIntendId);
+        $employers = fetch_selected_employers_for_intend($conn, $linkedIntendId);
+        $jobTitles = fetch_selected_job_titles_for_intend($conn, $linkedIntendId);
     }
 }
 
@@ -181,7 +193,7 @@ include __DIR__ . '/partials/header.php';
                     <thead class="table-light">
                         <tr>
                             <th scope="col">Sl. No</th>
-                            <th scope="col">Education Category</th>
+                            <th scope="col">Education Category master</th>
                             <th scope="col">Target Count</th>
                             <th scope="col">Criteria</th>
                         </tr>
@@ -241,16 +253,16 @@ include __DIR__ . '/partials/header.php';
                                 <td><?php echo $index + 1; ?></td>
                                 <td><?php echo htmlspecialchars($officer['name']); ?></td>
                                 <td>
-                                    <button class="btn btn-link p-0" type="button" data-bs-toggle="modal" data-bs-target="#aggregatorTarget-<?php echo $officerId; ?>">Set target</button>
+                                    <button class="btn btn-link p-0" type="button" data-bs-toggle="modal" data-bs-target="#aggregatorTarget-<?php echo $officerId; ?>">Aggregator wise target</button>
                                 </td>
                                 <td>
-                                    <button class="btn btn-link p-0" type="button" data-bs-toggle="modal" data-bs-target="#employerTarget-<?php echo $officerId; ?>">Set target</button>
+                                    <button class="btn btn-link p-0" type="button" data-bs-toggle="modal" data-bs-target="#employerTarget-<?php echo $officerId; ?>">Employer wise target</button>
                                 </td>
                                 <td>
-                                    <button class="btn btn-link p-0" type="button" data-bs-toggle="modal" data-bs-target="#jobTitleTarget-<?php echo $officerId; ?>">Set target</button>
+                                    <button class="btn btn-link p-0" type="button" data-bs-toggle="modal" data-bs-target="#jobTitleTarget-<?php echo $officerId; ?>">Job title wise target</button>
                                 </td>
                                 <td>
-                                    <button class="btn btn-link p-0" type="button" data-bs-toggle="modal" data-bs-target="#educationTarget-<?php echo $officerId; ?>">Set target</button>
+                                    <button class="btn btn-link p-0" type="button" data-bs-toggle="modal" data-bs-target="#educationTarget-<?php echo $officerId; ?>">Education category wise target</button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -284,7 +296,7 @@ include __DIR__ . '/partials/header.php';
                     </div>
                     <div class="modal-body">
                         <?php if (empty($aggregators)): ?>
-                            <p class="text-muted mb-0">No aggregators selected for this intend.</p>
+                            <p class="text-muted mb-0">No aggregators available from selected employers in the linked intend.</p>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($aggregators as $aggregator): ?>
@@ -313,12 +325,12 @@ include __DIR__ . '/partials/header.php';
                     </div>
                     <div class="modal-body">
                         <?php if (empty($employers)): ?>
-                            <p class="text-muted mb-0">No employers selected for this intend.</p>
+                            <p class="text-muted mb-0">No employers selected for the linked intend.</p>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($employers as $employer): ?>
                                     <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                        <span><?php echo htmlspecialchars($employer['name']); ?></span>
+                                        <span><?php echo htmlspecialchars($employer['name']); ?><?php echo !empty($employer['aggregator_name']) ? ' • ' . htmlspecialchars($employer['aggregator_name']) : ''; ?></span>
                                         <input class="form-control form-control-sm" style="max-width: 140px;" type="number" min="0" name="officer_targets[<?php echo $officerId; ?>][employer][<?php echo (int) $employer['id']; ?>]">
                                     </div>
                                 <?php endforeach; ?>
@@ -342,12 +354,12 @@ include __DIR__ . '/partials/header.php';
                     </div>
                     <div class="modal-body">
                         <?php if (empty($jobTitles)): ?>
-                            <p class="text-muted mb-0">No job titles selected for this intend.</p>
+                            <p class="text-muted mb-0">No job titles selected for the linked intend.</p>
                         <?php else: ?>
                             <div class="list-group">
                                 <?php foreach ($jobTitles as $jobTitle): ?>
                                     <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
-                                        <span><?php echo htmlspecialchars($jobTitle['name']); ?></span>
+                                        <span><?php echo htmlspecialchars($jobTitle['name']); ?><?php echo !empty($jobTitle['job_code']) ? ' (' . htmlspecialchars($jobTitle['job_code']) . ')' : ''; ?><?php echo !empty($jobTitle['employer_name']) ? ' • ' . htmlspecialchars($jobTitle['employer_name']) : ''; ?></span>
                                         <input class="form-control form-control-sm" style="max-width: 140px;" type="number" min="0" name="officer_targets[<?php echo $officerId; ?>][job_title][<?php echo (int) $jobTitle['id']; ?>]">
                                     </div>
                                 <?php endforeach; ?>
