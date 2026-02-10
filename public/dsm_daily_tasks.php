@@ -45,6 +45,12 @@ if (isset($_GET['task_created'])) {
 if (isset($_GET['task_updated'])) {
     $message = 'Daily task updated successfully.';
 }
+if (isset($_GET['task_created'])) {
+    $message = 'Daily task created successfully.';
+}
+if (isset($_GET['task_updated'])) {
+    $message = 'Daily task updated successfully.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
@@ -132,6 +138,17 @@ $filters = [
 $tasks = fetch_dsm_daily_tasks($conn, $filters);
 
 
+$filters = [
+    'date_from' => $_GET['date_from'] ?? '',
+    'date_to' => $_GET['date_to'] ?? '',
+    'job_fair_number' => trim($_GET['job_fair_number'] ?? ''),
+    'employer_name' => trim($_GET['employer_name'] ?? ''),
+    'job_title' => trim($_GET['job_title'] ?? ''),
+    'meeting_owner' => trim($_GET['meeting_owner'] ?? ''),
+];
+$tasks = fetch_dsm_daily_tasks($conn, $filters);
+
+
 include __DIR__ . '/partials/header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -145,18 +162,18 @@ include __DIR__ . '/partials/header.php';
     </div>
 </div>
 
-<?php if ($message): ?>
+<?php if ($message) { ?>
     <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
-<?php endif; ?>
-<?php if (!empty($errors)): ?>
-    <div class="alert alert-danger">
+<?php } ?>
+<?php if (!empty($errors)) { ?>
+    <div class="alert alert-danger mb-3">
         <ul class="mb-0">
             <?php foreach ($errors as $error): ?>
                 <li><?php echo htmlspecialchars($error); ?></li>
             <?php endforeach; ?>
         </ul>
     </div>
-<?php endif; ?>
+<?php } ?>
 
 <?php if (($process ?? '') === '') { ?>
     <div class="card border-0 shadow-sm mb-4">
@@ -214,9 +231,9 @@ include __DIR__ . '/partials/header.php';
                 <h2 class="h5 mb-0">Task List</h2>
                 <span class="text-muted small"><?php echo count($tasks); ?> records found.</span>
             </div>
-            <?php if (empty($tasks)): ?>
+            <?php if (empty($tasks)) { ?>
                 <div class="alert alert-info mb-0">No daily tasks found for selected filters.</div>
-            <?php else: ?>
+            <?php } else { ?>
                 <div class="table-responsive">
                     <table class="table align-middle">
                         <thead class="table-light">
@@ -241,7 +258,7 @@ include __DIR__ . '/partials/header.php';
                         </tbody>
                     </table>
                 </div>
-            <?php endif; ?>
+            <?php } ?>
         </div>
     </div>
 <?php } elseif (($process ?? '') === 'new_employer') { ?>
@@ -354,43 +371,36 @@ include __DIR__ . '/partials/header.php';
             </form>
         </div>
     </div>
-<?php endif; ?>
-
-<form class="card border-0 shadow-sm mb-4" method="get">
-    <input type="hidden" name="mode" value="list">
-    <div class="card-body">
-        <h2 class="h6 mb-3">Filter Task List</h2>
-        <div class="row g-3">
-            <div class="col-md-2">
-                <label class="form-label">Date from</label>
-                <input class="form-control" type="date" name="date_from" value="<?php echo htmlspecialchars($filters['date_from']); ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Date to</label>
-                <input class="form-control" type="date" name="date_to" value="<?php echo htmlspecialchars($filters['date_to']); ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Job Fair #</label>
-                <input class="form-control" name="job_fair_number" value="<?php echo htmlspecialchars($filters['job_fair_number']); ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Employer name</label>
-                <input class="form-control" name="employer_name" value="<?php echo htmlspecialchars($filters['employer_name']); ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Job title</label>
-                <input class="form-control" name="job_title" value="<?php echo htmlspecialchars($filters['job_title']); ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Meeting owner</label>
-                <input class="form-control" name="meeting_owner" value="<?php echo htmlspecialchars($filters['meeting_owner']); ?>">
-            </div>
-            <div class="col-12 d-flex justify-content-end gap-2">
-                <a class="btn btn-outline-secondary" href="/dsm_daily_tasks.php">Reset</a>
-                <button class="btn btn-primary" type="submit">Apply</button>
+    <?php if ($selectedEmployer) { ?>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h3 class="h6 mb-3">Edit selected employer: <?php echo htmlspecialchars($selectedEmployer['name']); ?></h3>
+                <form method="post" class="row g-3">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                    <input type="hidden" name="action" value="update_employer">
+                    <input type="hidden" name="employer_id" value="<?php echo (int) $selectedEmployer['id']; ?>">
+                    <div class="col-md-4"><label class="form-label">Employer code</label><input class="form-control" name="code" required value="<?php echo htmlspecialchars($_POST['code'] ?? $selectedEmployer['code']); ?>"></div>
+                    <div class="col-md-8"><label class="form-label">Employer name</label><input class="form-control" name="name" required value="<?php echo htmlspecialchars($_POST['name'] ?? $selectedEmployer['name']); ?>"></div>
+                    <div class="col-md-4"><label class="form-label">SPOC name</label><input class="form-control" name="spoc_name" value="<?php echo htmlspecialchars($_POST['spoc_name'] ?? ($selectedEmployer['spoc_name'] ?? '')); ?>"></div>
+                    <div class="col-md-4"><label class="form-label">SPOC mobile</label><input class="form-control" name="spoc_mobile" value="<?php echo htmlspecialchars($_POST['spoc_mobile'] ?? ($selectedEmployer['spoc_mobile'] ?? '')); ?>"></div>
+                    <div class="col-md-4"><label class="form-label">SPOC email</label><input class="form-control" type="email" name="spoc_email" value="<?php echo htmlspecialchars($_POST['spoc_email'] ?? ($selectedEmployer['spoc_email'] ?? '')); ?>"></div>
+                    <div class="col-md-6">
+                        <label class="form-label">Aggregator</label>
+                        <select class="form-select" name="aggregator_id">
+                            <option value="">Select aggregator</option>
+                            <?php foreach ($aggregators as $aggregator): ?>
+                                <?php $selectedAgg = $_POST['aggregator_id'] ?? $selectedEmployer['aggregator_id']; ?>
+                                <option value="<?php echo (int) $aggregator['id']; ?>" <?php echo ((string) $selectedAgg === (string) $aggregator['id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($aggregator['name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-12"><button class="btn btn-primary" type="submit">Update employer</button></div>
+                </form>
             </div>
         </div>
-    <?php endif; ?>
+    <?php } ?>
 <?php } elseif (($process ?? '') === 'new_job_title') { ?>
     <div class="card border-0 shadow-sm">
         <div class="card-body">
