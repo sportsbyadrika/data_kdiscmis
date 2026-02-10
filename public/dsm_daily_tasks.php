@@ -15,6 +15,12 @@ $message = '';
 $errors = [];
 $message = '';
 
+$mode = (string) ($_GET['mode'] ?? '');
+if (!in_array($mode, ['add', 'edit'], true)) {
+    $mode = '';
+}
+$taskId = (int) ($_GET['task_id'] ?? 0);
+
 if (isset($_GET['created'])) {
     $message = 'Daily task created successfully.';
 }
@@ -96,6 +102,7 @@ $taskTypes = fetch_dsm_task_types($conn);
 $aggregators = fetch_aggregators_for_dsm($conn);
 $tasks = fetch_dsm_daily_tasks($conn, $filters);
 $editTask = $mode === 'edit' && $taskId > 0 ? fetch_dsm_daily_task_by_id($conn, $taskId) : null;
+$formTask = $editTask ?? [];
 
 $allEmployers = fetch_all_employers_for_dsm($conn);
 $allJobTitles = fetch_all_job_titles_for_dsm($conn);
@@ -487,11 +494,10 @@ include __DIR__ . '/partials/header.php';
                                 <a class="btn btn-sm btn-outline-primary" href="/dsm_daily_tasks.php?mode=edit&task_id=<?php echo (int) $task['id']; ?>">Edit</a>
                             </td>
                         </tr>
-                    <?php } ?>
                     </tbody>
                 </table>
             </div>
-        <?php endif; ?>
+        <?php } ?>
     </div>
     <?php if ($selectedJobTitle) { ?>
         <div class="card border-0 shadow-sm">
@@ -529,4 +535,3 @@ include __DIR__ . '/partials/header.php';
 <?php } ?>
 
 <?php include __DIR__ . '/partials/footer.php'; ?>
-
