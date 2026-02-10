@@ -311,3 +311,81 @@ function replace_intend_job_titles(mysqli $conn, int $intendId, array $jobTitleI
 
     $conn->commit();
 }
+
+function fetch_latest_intend_id_by_job_fair_number(mysqli $conn, string $jobFairNumber): int
+{
+    $value = trim($jobFairNumber);
+    if ($value === '') {
+        return 0;
+    }
+
+    $stmt = $conn->prepare(
+        'SELECT id FROM job_fair_intends WHERE reference_job_fair_number = ? ORDER BY id DESC LIMIT 1'
+    );
+    $stmt->bind_param('s', $value);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+
+    return $row ? (int) $row['id'] : 0;
+}
+
+function fetch_selected_employers_for_intend(mysqli $conn, int $intendId): array
+{
+    if ($intendId <= 0) {
+        return [];
+    }
+
+    $stmt = $conn->prepare(
+        'SELECT e.id, e.name, e.code, a.id AS aggregator_id, a.name AS aggregator_name ' .
+        'FROM job_fair_intend_employers jie ' .
+        'JOIN employers e ON e.id = jie.employer_id ' .
+        'LEFT JOIN aggregators a ON a.id = e.aggregator_id ' .
+        'WHERE jie.intend_id = ? ORDER BY e.name'
+    );
+    $stmt->bind_param('i', $intendId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_selected_aggregators_for_intend(mysqli $conn, int $intendId): array
+{
+    if ($intendId <= 0) {
+        return [];
+    }
+
+    $stmt = $conn->prepare(
+        'SELECT DISTINCT a.id, a.name ' .
+        'FROM job_fair_intend_employers jie ' .
+        'JOIN employers e ON e.id = jie.employer_id ' .
+        'JOIN aggregators a ON a.id = e.aggregator_id ' .
+        'WHERE jie.intend_id = ? ORDER BY a.name'
+    );
+    $stmt->bind_param('i', $intendId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_selected_job_titles_for_intend(mysqli $conn, int $intendId): array
+{
+    if ($intendId <= 0) {
+        return [];
+    }
+
+    $stmt = $conn->prepare(
+        'SELECT jt.id, jt.job_title AS name, jt.job_code, e.name AS employer_name ' .
+        'FROM job_fair_intend_job_titles jijt ' .
+        'JOIN job_titles jt ON jt.id = jijt.job_title_id ' .
+        'JOIN employers e ON e.id = jt.employer_id ' .
+        'WHERE jijt.intend_id = ? ORDER BY jt.job_title'
+    );
+    $stmt->bind_param('i', $intendId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
