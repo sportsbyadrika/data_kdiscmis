@@ -33,6 +33,12 @@ if (isset($_GET['task_created'])) {
 if (isset($_GET['task_updated'])) {
     $message = 'Daily task updated successfully.';
 }
+if (isset($_GET['task_created'])) {
+    $message = 'Daily task created successfully.';
+}
+if (isset($_GET['task_updated'])) {
+    $message = 'Daily task updated successfully.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
@@ -98,6 +104,17 @@ $filters = [
 $tasks = fetch_dsm_daily_tasks($conn, $filters);
 
 
+$filters = [
+    'date_from' => $_GET['date_from'] ?? '',
+    'date_to' => $_GET['date_to'] ?? '',
+    'job_fair_number' => trim($_GET['job_fair_number'] ?? ''),
+    'employer_name' => trim($_GET['employer_name'] ?? ''),
+    'job_title' => trim($_GET['job_title'] ?? ''),
+    'meeting_owner' => trim($_GET['meeting_owner'] ?? ''),
+];
+$tasks = fetch_dsm_daily_tasks($conn, $filters);
+
+
 include __DIR__ . '/partials/header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -135,34 +152,6 @@ include __DIR__ . '/partials/header.php';
                 <a class="btn btn-outline-primary" href="/dsm_daily_tasks.php?process=edit_job_title">Edit job title</a>
                 <a class="btn btn-success" role="button" href="/dsm_daily_task_entry.php">New DSM task</a>
             </div>
-            <?php if (empty($tasks)): ?>
-                <div class="alert alert-info mb-0">No daily tasks found for selected filters.</div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Date</th>
-                            <th>Task type</th>
-                            <th>Task title</th>
-                            <th>Result</th>
-                            <th></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($tasks as $task): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($task['task_date']); ?></td>
-                                <td><?php echo htmlspecialchars($task['task_type_name']); ?></td>
-                                <td><?php echo htmlspecialchars($task['task_title']); ?></td>
-                                <td><?php echo htmlspecialchars($task['result']); ?></td>
-                                <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/dsm_daily_task_entry.php?task_id=<?php echo (int) $task['id']; ?>">Edit</a></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
         </div>
     </div>
 
@@ -199,6 +188,34 @@ include __DIR__ . '/partials/header.php';
                     <button class="btn btn-primary" type="submit">Apply</button>
                 </div>
             </div>
+            <?php if (empty($tasks)): ?>
+                <div class="alert alert-info mb-0">No daily tasks found for selected filters.</div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Task type</th>
+                            <th>Task title</th>
+                            <th>Result</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($tasks as $task): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($task['task_date']); ?></td>
+                                <td><?php echo htmlspecialchars($task['task_type_name']); ?></td>
+                                <td><?php echo htmlspecialchars($task['task_title']); ?></td>
+                                <td><?php echo htmlspecialchars($task['result']); ?></td>
+                                <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/dsm_daily_task_entry.php?task_id=<?php echo (int) $task['id']; ?>">Edit</a></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
     </form>
 
@@ -444,71 +461,39 @@ include __DIR__ . '/partials/header.php';
             </div>
         <?php endif; ?>
     </div>
-</div>
-
-
-<?php if ($mode === 'add' || $mode === 'edit'): ?>
-<script>
-(function () {
-    const employers = <?php echo json_encode($allEmployers, JSON_UNESCAPED_UNICODE); ?>;
-    const jobTitles = <?php echo json_encode($allJobTitles, JSON_UNESCAPED_UNICODE); ?>;
-
-    const aggregatorSelect = document.getElementById('aggregator_id');
-    const employerSelect = document.getElementById('employer_id');
-    const jobTitleSelect = document.querySelector('select[name="job_title_id"]');
-
-    if (!aggregatorSelect || !employerSelect || !jobTitleSelect) {
-        return;
-    }
-
-    const selectedEmployerId = '<?php echo htmlspecialchars((string) ($_POST['employer_id'] ?? ($formTask['employer_id'] ?? ''))); ?>';
-    const selectedJobTitleId = '<?php echo htmlspecialchars((string) ($_POST['job_title_id'] ?? ($formTask['job_title_id'] ?? ''))); ?>';
-
-    function populateEmployers() {
-        const aggregatorId = aggregatorSelect.value;
-        employerSelect.innerHTML = '<option value="">Select employer</option>';
-
-        employers
-            .filter((employer) => aggregatorId === '' || String(employer.aggregator_id) === aggregatorId)
-            .forEach((employer) => {
-                const option = document.createElement('option');
-                option.value = employer.id;
-                option.textContent = employer.name;
-                if (String(employer.id) === selectedEmployerId) {
-                    option.selected = true;
-                }
-                employerSelect.appendChild(option);
-            });
-    }
-
-    function populateJobTitles() {
-        const employerId = employerSelect.value;
-        jobTitleSelect.innerHTML = '<option value="">Select job title</option>';
-
-        jobTitles
-            .filter((jobTitle) => employerId !== '' && String(jobTitle.employer_id) === employerId)
-            .forEach((jobTitle) => {
-                const option = document.createElement('option');
-                option.value = jobTitle.id;
-                option.textContent = jobTitle.job_title;
-                if (String(jobTitle.id) === selectedJobTitleId) {
-                    option.selected = true;
-                }
-                jobTitleSelect.appendChild(option);
-            });
-    }
-
-    aggregatorSelect.addEventListener('change', function () {
-        populateEmployers();
-        populateJobTitles();
-    });
-
-    employerSelect.addEventListener('change', populateJobTitles);
-
-    populateEmployers();
-    populateJobTitles();
-})();
-</script>
+    <?php if ($selectedJobTitle) { ?>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h3 class="h6 mb-3">Edit selected job title: <?php echo htmlspecialchars($selectedJobTitle['job_title']); ?></h3>
+                <p class="text-muted small">On save, previous values and new values are logged for this job title edit.</p>
+                <form method="post" class="row g-3">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                    <input type="hidden" name="action" value="update_job_title">
+                    <input type="hidden" name="job_title_id" value="<?php echo (int) $selectedJobTitle['id']; ?>">
+                    <div class="col-md-4"><label class="form-label">Job code</label><input class="form-control" name="job_code" required value="<?php echo htmlspecialchars($_POST['job_code'] ?? $selectedJobTitle['job_code']); ?>"></div>
+                    <div class="col-md-8"><label class="form-label">Job title</label><input class="form-control" name="job_title" required value="<?php echo htmlspecialchars($_POST['job_title'] ?? $selectedJobTitle['job_title']); ?>"></div>
+                    <div class="col-md-6">
+                        <label class="form-label">Employer</label>
+                        <select class="form-select" name="employer_id" required>
+                            <option value="">Select employer</option>
+                            <?php foreach ($employers as $employer): ?>
+                                <?php $selectedEmp = $_POST['employer_id'] ?? $selectedJobTitle['employer_id']; ?>
+                                <option value="<?php echo (int) $employer['id']; ?>" <?php echo ((string) $selectedEmp === (string) $employer['id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($employer['name'] . ' (' . $employer['code'] . ')'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3"><label class="form-label">Openings</label><input type="number" min="0" class="form-control" name="openings" value="<?php echo htmlspecialchars($_POST['openings'] ?? (string) $selectedJobTitle['openings']); ?>"></div>
+                    <div class="col-md-3"><label class="form-label">Status</label><select class="form-select" name="status"><option value="active" <?php echo (($_POST['status'] ?? $selectedJobTitle['status']) === 'active') ? 'selected' : ''; ?>>Active</option><option value="inactive" <?php echo (($_POST['status'] ?? $selectedJobTitle['status']) === 'inactive') ? 'selected' : ''; ?>>Inactive</option></select></div>
+                    <div class="col-md-6"><label class="form-label">Job location</label><input class="form-control" name="job_location" value="<?php echo htmlspecialchars($_POST['job_location'] ?? ($selectedJobTitle['job_location'] ?? '')); ?>"></div>
+                    <div class="col-md-6"><label class="form-label">Job description</label><input class="form-control" name="job_description" value="<?php echo htmlspecialchars($_POST['job_description'] ?? ($selectedJobTitle['job_description'] ?? '')); ?>"></div>
+                    <div class="col-12"><label class="form-label">Job details</label><textarea class="form-control" rows="3" name="job_details"><?php echo htmlspecialchars($_POST['job_details'] ?? ($selectedJobTitle['job_details'] ?? '')); ?></textarea></div>
+                    <div class="col-12"><button class="btn btn-primary" type="submit">Update job title</button></div>
+                </form>
+            </div>
+        </div>
+    <?php } ?>
 <?php endif; ?>
 
 <?php include __DIR__ . '/partials/footer.php'; ?>
