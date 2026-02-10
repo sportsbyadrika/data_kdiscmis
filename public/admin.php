@@ -134,6 +134,7 @@ include __DIR__ . '/partials/header.php';
                 <div class="d-flex flex-wrap gap-2 mt-auto">
                     <a class="btn btn-sm btn-outline-primary" href="/job_fair_daily_tasks.php">Strategy Meetings</a>
                     <a class="btn btn-sm btn-primary" href="/job_fair_intends.php">Job Fair Intend</a>
+                    <a class="btn btn-sm btn-outline-dark" href="/dsm_daily_tasks.php">DSM Daily Tasks</a>
                 </div>
             </div>
         </div>

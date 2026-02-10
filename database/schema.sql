@@ -286,6 +286,32 @@ CREATE TABLE IF NOT EXISTS job_fair_intend_job_titles (
     FOREIGN KEY (job_title_id) REFERENCES job_titles(id)
 );
 
+
+CREATE TABLE IF NOT EXISTS dsm_employer_activity_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employer_id INT NOT NULL,
+    activity_type ENUM('create','edit') NOT NULL,
+    activity_date DATE NOT NULL,
+    changed_by_user_id INT NOT NULL,
+    change_notes JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employer_id) REFERENCES employers(id),
+    FOREIGN KEY (changed_by_user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS dsm_job_title_activity_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    job_title_id INT NOT NULL,
+    activity_type ENUM('create','edit') NOT NULL,
+    activity_date DATE NOT NULL,
+    changed_by_user_id INT NOT NULL,
+    previous_values JSON NULL,
+    new_values JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (job_title_id) REFERENCES job_titles(id),
+    FOREIGN KEY (changed_by_user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS blog_posts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
