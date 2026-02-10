@@ -1,3 +1,3 @@
 <?php
-header('Location: /dsm_daily_tasks.php?process=edit_employer');
-exit();
+$_GET['process'] = 'edit_employer';
+require __DIR__ . '/dsm_daily_tasks.php';
