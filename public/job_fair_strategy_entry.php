@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../src/auth.php';
 require_once __DIR__ . '/../src/job_fair_daily_tasks.php';
+require_once __DIR__ . '/../src/job_fair_intends.php';
 
 require_auth();
 $conn = db_connect();
