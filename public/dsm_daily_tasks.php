@@ -204,10 +204,10 @@ include __DIR__ . '/partials/header.php';
         <div class="card-body">
             <h2 class="h5 mb-3">Select Process</h2>
             <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-primary" href="/dsm_daily_tasks.php?process=new_employer">New employer</a>
-                <a class="btn btn-outline-primary" href="/dsm_daily_tasks.php?process=edit_employer">Edit employer</a>
-                <a class="btn btn-primary" href="/dsm_daily_tasks.php?process=new_job_title">New job title</a>
-                <a class="btn btn-outline-primary" href="/dsm_daily_tasks.php?process=edit_job_title">Edit job title</a>
+                <a class="btn btn-primary" href="/dsm_new_employer.php">New employer</a>
+                <a class="btn btn-outline-primary" href="/dsm_edit_employer.php">Edit employer</a>
+                <a class="btn btn-primary" href="/dsm_new_job_title.php">New job title</a>
+                <a class="btn btn-outline-primary" href="/dsm_edit_job_title.php">Edit job title</a>
                 <a class="btn btn-success" role="button" href="/dsm_daily_task_entry.php">New DSM task</a>
             </div>
         </div>
@@ -403,7 +403,7 @@ include __DIR__ . '/partials/header.php';
                             <td><?php echo htmlspecialchars($employer['code']); ?></td>
                             <td><?php echo htmlspecialchars($employer['name']); ?></td>
                             <td><?php echo htmlspecialchars($employer['aggregator_name'] ?? '-'); ?></td>
-                            <td class="text-end"><a class="btn btn-sm btn-primary" href="/dsm_daily_tasks.php?process=edit_employer&employer_id=<?php echo (int) $employer['id']; ?>">Edit</a></td>
+                            <td class="text-end"><a class="btn btn-sm btn-primary" href="/dsm_edit_employer.php&employer_id=<?php echo (int) $employer['id']; ?>">Edit</a></td>
                         </tr>
                     <?php } ?>
                     </tbody>
@@ -478,7 +478,7 @@ include __DIR__ . '/partials/header.php';
             <form class="row g-2" method="get">
                 <input type="hidden" name="process" value="edit_job_title">
                 <div class="col-md-8"><input class="form-control" name="search" placeholder="Search employer/job title/job code" value="<?php echo htmlspecialchars($search); ?>"></div>
-                <div class="col-md-4 d-flex gap-2"><button class="btn btn-outline-primary w-100" type="submit">Search</button><a class="btn btn-outline-secondary w-100" href="/dsm_daily_tasks.php?process=edit_job_title">Reset</a></div>
+                <div class="col-md-4 d-flex gap-2"><button class="btn btn-outline-primary w-100" type="submit">Search</button><a class="btn btn-outline-secondary w-100" href="/dsm_edit_job_title.php">Reset</a></div>
             </form>
             <div class="table-responsive mt-3">
                 <table class="table table-sm align-middle">
