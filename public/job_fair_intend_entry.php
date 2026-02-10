@@ -61,6 +61,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+
+        if ($action === 'update_targets') {
+            $intendId = (int) ($_POST['intend_id'] ?? 0);
+            if ($intendId === 0) {
+                $errors[] = 'Invalid intend selected.';
+            } else {
+                update_job_fair_intend_targets($conn, $intendId, $_POST, $errors);
+                if (empty($errors)) {
+                    $message = 'Job fair targets updated.';
+                }
+            }
+        }
+
+        if ($action === 'update_employers') {
+            $intendId = (int) ($_POST['intend_id'] ?? 0);
+            if ($intendId === 0) {
+                $errors[] = 'Invalid intend selected.';
+            } else {
+                $employerIds = array_values(array_filter($_POST['employer_ids'] ?? [], static fn($value): bool => $value !== ''));
+                replace_intend_employers($conn, $intendId, $employerIds);
+                if (empty($errors)) {
+                    $message = 'Employers updated.';
+                }
+            }
+        }
+
+        if ($action === 'update_job_titles') {
+            $intendId = (int) ($_POST['intend_id'] ?? 0);
+            if ($intendId === 0) {
+                $errors[] = 'Invalid intend selected.';
+            } else {
+                $jobTitleIds = array_values(array_filter($_POST['job_title_ids'] ?? [], static fn($value): bool => $value !== ''));
+                replace_intend_job_titles($conn, $intendId, $jobTitleIds);
+                if (empty($errors)) {
+                    $message = 'Job titles updated.';
+                }
+            }
+        }
     }
 }
 
@@ -76,6 +114,19 @@ $stepTwo = $intendId > 0 && $intend;
 $sdpkCenters = $stepTwo ? fetch_sdpk_centers_for_intend($conn) : [];
 $locationCounts = $stepTwo ? fetch_intend_location_counts($conn, $intendId) : [];
 $selectedLocationIds = $stepTwo ? fetch_intend_location_ids_by_type($conn, $intendId) : [];
+$employers = $stepTwo ? fetch_employers_for_intend($conn) : [];
+$jobTitles = $stepTwo ? fetch_job_titles_for_intend($conn) : [];
+$selectedEmployerIds = $stepTwo ? fetch_intend_employer_ids($conn, $intendId) : [];
+$selectedJobTitleIds = $stepTwo ? fetch_intend_job_title_ids($conn, $intendId) : [];
+$selectedJobTitleTotal = 0;
+if ($stepTwo && !empty($selectedJobTitleIds)) {
+    $selectedLookup = array_flip($selectedJobTitleIds);
+    foreach ($jobTitles as $jobTitle) {
+        if (isset($selectedLookup[(int) $jobTitle['id']])) {
+            $selectedJobTitleTotal += (int) $jobTitle['openings'];
+        }
+    }
+}
 
 include __DIR__ . '/partials/header.php';
 ?>
@@ -193,6 +244,63 @@ include __DIR__ . '/partials/header.php';
         </div>
     </div>
 
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Job Fair Targets</h2>
+                    <p class="text-muted small mb-0">Capture hiring targets and select employers/job titles.</p>
+                </div>
+            </div>
+            <form method="post" class="row g-3 align-items-end">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                <input type="hidden" name="action" value="update_targets">
+                <input type="hidden" name="intend_id" value="<?php echo (int) $intendId; ?>">
+                <div class="col-md-4">
+                    <label class="form-label">Target Openings</label>
+                    <input class="form-control" type="number" min="0" name="target_openings" value="<?php echo htmlspecialchars($intend['target_openings'] ?? ''); ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Minimum HR Required</label>
+                    <input class="form-control" type="number" min="0" name="minimum_hr_required" value="<?php echo htmlspecialchars($intend['minimum_hr_required'] ?? ''); ?>">
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary" type="submit">Save Targets</button>
+                </div>
+            </form>
+            <div class="table-responsive mt-4">
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Category</th>
+                            <th scope="col">Selected Count</th>
+                            <th scope="col">Total Openings</th>
+                            <th scope="col">List</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Employers</td>
+                            <td><?php echo count($selectedEmployerIds); ?></td>
+                            <td>-</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#employerModal">List</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Job Titles</td>
+                            <td><?php echo count($selectedJobTitleIds); ?></td>
+                            <td><?php echo (int) $selectedJobTitleTotal; ?></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#jobTitleModal">List</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <?php foreach ($locationTypes as $type): ?>
         <?php $selectedIds = $selectedLocationIds[$type['label']] ?? []; ?>
         <div class="modal fade" id="locationModal-<?php echo htmlspecialchars($type['key']); ?>" tabindex="-1" aria-hidden="true" data-location-modal>
@@ -212,7 +320,7 @@ include __DIR__ . '/partials/header.php';
                                 <span class="text-muted small">Selected centers: <span data-selected-count>0</span></span>
                                 <span class="text-muted small"><?php echo count($sdpkCenters); ?> centers available</span>
                             </div>
-                            <div class="list-group">
+                            <div class="list-group modal-list-scroll">
                                 <?php foreach ($sdpkCenters as $center): ?>
                                     <?php $isChecked = in_array((int) $center['id'], $selectedIds, true); ?>
                                     <label class="list-group-item d-flex align-items-start gap-2">
@@ -238,21 +346,162 @@ include __DIR__ . '/partials/header.php';
         </div>
     <?php endforeach; ?>
 
+    <div class="modal fade" id="employerModal" tabindex="-1" aria-hidden="true" data-employer-modal>
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                    <input type="hidden" name="action" value="update_employers">
+                    <input type="hidden" name="intend_id" value="<?php echo (int) $intendId; ?>">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Employers</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                            <span class="text-muted small">Selected employers: <span data-selected-count>0</span></span>
+                            <span class="text-muted small"><?php echo count($employers); ?> employers available</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                            <input class="form-control" type="search" placeholder="Search employers..." data-search-input>
+                            <div class="form-check ms-auto">
+                                <input class="form-check-input" type="checkbox" id="selectAllEmployers" data-select-all>
+                                <label class="form-check-label" for="selectAllEmployers">Select all</label>
+                            </div>
+                        </div>
+                        <div class="list-group modal-list-scroll" data-search-list>
+                            <?php foreach ($employers as $employer): ?>
+                                <?php $isChecked = in_array((int) $employer['id'], $selectedEmployerIds, true); ?>
+                                <label class="list-group-item d-flex align-items-start gap-2" data-search-item>
+                                    <input class="form-check-input mt-1 selection-checkbox" type="checkbox" name="employer_ids[]" value="<?php echo (int) $employer['id']; ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
+                                    <span>
+                                        <span class="fw-semibold"><?php echo htmlspecialchars($employer['name']); ?></span>
+                                        <span class="text-muted small d-block"><?php echo htmlspecialchars($employer['code']); ?><?php echo $employer['aggregator_name'] ? ' • ' . htmlspecialchars($employer['aggregator_name']) : ''; ?></span>
+                                        <span class="text-muted small d-block"><?php echo htmlspecialchars($employer['spoc_name'] ?? ''); ?><?php echo $employer['spoc_mobile'] ? ' • ' . htmlspecialchars($employer['spoc_mobile']) : ''; ?><?php echo $employer['spoc_email'] ? ' • ' . htmlspecialchars($employer['spoc_email']) : ''; ?></span>
+                                    </span>
+                                </label>
+                            <?php endforeach; ?>
+                            <?php if (empty($employers)): ?>
+                                <div class="text-muted">No employers available.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Selection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="jobTitleModal" tabindex="-1" aria-hidden="true" data-job-title-modal>
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                    <input type="hidden" name="action" value="update_job_titles">
+                    <input type="hidden" name="intend_id" value="<?php echo (int) $intendId; ?>">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Job Titles</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                            <span class="text-muted small">Selected job titles: <span data-selected-count>0</span></span>
+                            <span class="text-muted small"><?php echo count($jobTitles); ?> job titles available</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                            <input class="form-control" type="search" placeholder="Search job titles..." data-search-input>
+                            <div class="form-check ms-auto">
+                                <input class="form-check-input" type="checkbox" id="selectAllJobTitles" data-select-all>
+                                <label class="form-check-label" for="selectAllJobTitles">Select all</label>
+                            </div>
+                        </div>
+                        <div class="list-group modal-list-scroll" data-search-list>
+                            <?php foreach ($jobTitles as $jobTitle): ?>
+                                <?php $isChecked = in_array((int) $jobTitle['id'], $selectedJobTitleIds, true); ?>
+                                <label class="list-group-item d-flex align-items-start gap-2" data-search-item>
+                                    <input class="form-check-input mt-1 selection-checkbox" type="checkbox" name="job_title_ids[]" value="<?php echo (int) $jobTitle['id']; ?>" <?php echo $isChecked ? 'checked' : ''; ?>>
+                                    <span>
+                                        <span class="fw-semibold"><?php echo htmlspecialchars($jobTitle['job_title']); ?></span>
+                                        <span class="text-muted small d-block"><?php echo htmlspecialchars($jobTitle['job_code']); ?> • <?php echo htmlspecialchars($jobTitle['employer_name']); ?></span>
+                                        <span class="text-muted small d-block">Openings: <?php echo (int) $jobTitle['openings']; ?></span>
+                                    </span>
+                                </label>
+                            <?php endforeach; ?>
+                            <?php if (empty($jobTitles)): ?>
+                                <div class="text-muted">No job titles available.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Selection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
-        document.querySelectorAll('[data-location-modal]').forEach((modal) => {
+        const setupSelectionModal = (modal) => {
+            if (!modal) {
+                return;
+            }
             const countEl = modal.querySelector('[data-selected-count]');
-            const checkboxes = modal.querySelectorAll('.location-checkbox');
+            const checkboxes = modal.querySelectorAll('.selection-checkbox, .location-checkbox');
+            const selectAll = modal.querySelector('[data-select-all]');
             const updateCount = () => {
-                const selected = modal.querySelectorAll('.location-checkbox:checked').length;
+                const selected = modal.querySelectorAll('.selection-checkbox:checked, .location-checkbox:checked').length;
                 if (countEl) {
                     countEl.textContent = selected;
                 }
+                if (selectAll && checkboxes.length) {
+                    const allChecked = Array.from(checkboxes).every((box) => box.checked);
+                    const anyChecked = Array.from(checkboxes).some((box) => box.checked);
+                    selectAll.indeterminate = !allChecked && anyChecked;
+                    selectAll.checked = allChecked;
+                }
             };
+            const searchInput = modal.querySelector('[data-search-input]');
+            const items = modal.querySelectorAll('[data-search-item]');
+            if (searchInput && items.length) {
+                searchInput.addEventListener('input', () => {
+                    const query = searchInput.value.trim().toLowerCase();
+                    items.forEach((item) => {
+                        const text = item.textContent.toLowerCase();
+                        item.classList.toggle('d-none', query !== '' && !text.includes(query));
+                    });
+                });
+            }
+            if (selectAll && checkboxes.length) {
+                selectAll.addEventListener('change', () => {
+                    checkboxes.forEach((checkbox) => {
+                        checkbox.checked = selectAll.checked;
+                    });
+                    updateCount();
+                });
+            }
             checkboxes.forEach((checkbox) => {
-                checkbox.addEventListener('change', updateCount);
+                checkbox.addEventListener('change', () => {
+                    updateCount();
+                });
             });
             updateCount();
+        };
+
+        document.querySelectorAll('[data-location-modal]').forEach((modal) => {
+            setupSelectionModal(modal);
         });
+        setupSelectionModal(document.querySelector('[data-employer-modal]'));
+        setupSelectionModal(document.querySelector('[data-job-title-modal]'));
     </script>
+    <style>
+        .modal-list-scroll {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+    </style>
 <?php endif; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>
