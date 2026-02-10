@@ -311,3 +311,22 @@ function replace_intend_job_titles(mysqli $conn, int $intendId, array $jobTitleI
 
     $conn->commit();
 }
+
+
+function fetch_latest_intend_id_by_job_fair_number(mysqli $conn, string $jobFairNumber): int
+{
+    $value = trim($jobFairNumber);
+    if ($value === '') {
+        return 0;
+    }
+
+    $stmt = $conn->prepare(
+        'SELECT id FROM job_fair_intends WHERE reference_job_fair_number = ? ORDER BY id DESC LIMIT 1'
+    );
+    $stmt->bind_param('s', $value);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+
+    return $row ? (int) $row['id'] : 0;
+}
