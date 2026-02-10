@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS applicant_crm_calls (
 
 CREATE TABLE IF NOT EXISTS qualification_categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(120) NOT NULL UNIQUE
+    name VARCHAR(120) NOT NULL UNIQUE,
+    criteria TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS local_body_types (
