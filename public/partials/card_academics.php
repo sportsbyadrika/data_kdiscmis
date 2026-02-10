@@ -8,7 +8,11 @@
                 <label class="form-label">Category Name</label>
                 <input type="text" name="name" class="form-control" required>
             </div>
-            <div class="col-md-4 d-flex align-items-end">
+            <div class="col-md-12">
+                <label class="form-label">Criteria</label>
+                <textarea name="criteria" class="form-control" rows="2" placeholder="Define eligibility or entry criteria"></textarea>
+            </div>
+            <div class="col-12 d-flex align-items-end">
                 <button class="btn btn-primary w-100" type="submit">Add Category</button>
             </div>
         </form>

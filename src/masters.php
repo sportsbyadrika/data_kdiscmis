@@ -47,6 +47,12 @@ function fetch_named(mysqli $conn, string $table): array
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
+function fetch_qualification_categories(mysqli $conn): array
+{
+    $result = $conn->query('SELECT id, name, criteria FROM qualification_categories ORDER BY name ASC');
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
 function fetch_distinct(mysqli $conn, string $table, string $column): array
 {
     $stmt = $conn->prepare(
@@ -147,7 +153,7 @@ function master_definitions(): array
             'group' => 'Academic',
             'table' => 'qualification_categories',
             'filters' => [],
-            'columns' => ['name' => 'Qualification Category'],
+            'columns' => ['name' => 'Qualification Category', 'criteria' => 'Criteria'],
         ],
         'academic_institutions' => [
             'title' => 'Academic Institutions',
@@ -288,7 +294,7 @@ function build_master_query(string $key, string $where): string
                 "CASE WHEN sc.active_status = 1 THEN 'Active' ELSE 'Inactive' END AS active_status_label, d.name AS district_name " .
                 "FROM sdpk_centers sc JOIN districts d ON sc.district_id = d.id {$where} ORDER BY sc.name";
         case 'qualification_categories':
-            return "SELECT id, name FROM qualification_categories {$where} ORDER BY name";
+            return "SELECT id, name, criteria FROM qualification_categories {$where} ORDER BY name";
         case 'academic_institutions':
             return "SELECT ai.id, ai.name, ai.latitude, ai.longitude, d.name AS district_name, qc.name AS qualification_category_name, ai.institution_type FROM academic_institutions ai " .
                 "JOIN districts d ON ai.district_id = d.id " .
@@ -389,6 +395,20 @@ function create_simple(mysqli $conn, string $table, string $name, string &$messa
     $message = ucfirst(str_replace('_', ' ', $table)) . ' entry added.';
 }
 
+function create_qualification_category(mysqli $conn, string $name, string $criteria, string &$message): void
+{
+    $trimmed = trim($name);
+    if ($trimmed === '') {
+        return;
+    }
+    $criteriaValue = trim($criteria);
+    $criteriaValue = $criteriaValue === '' ? null : $criteriaValue;
+    $stmt = $conn->prepare('INSERT INTO qualification_categories (name, criteria) VALUES (?, ?)');
+    $stmt->bind_param('ss', $trimmed, $criteriaValue);
+    $stmt->execute();
+    $message = 'Qualification categories entry added.';
+}
+
 function handle_master_creation(mysqli $conn, string $action, array $input, string $message, array $options): string
 {
     switch ($action) {
@@ -444,7 +464,7 @@ function handle_master_creation(mysqli $conn, string $action, array $input, stri
             }
             break;
         case 'create_qualification_category':
-            create_simple($conn, 'qualification_categories', $input['name'] ?? '', $message);
+            create_qualification_category($conn, $input['name'] ?? '', $input['criteria'] ?? '', $message);
             break;
         case 'create_academic_authority':
             $code = trim($input['code'] ?? '');

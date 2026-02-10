@@ -211,6 +211,15 @@ function user_dashboard_counts(mysqli $conn, array $user): array
     };
 }
 
+function fetch_active_officers(mysqli $conn): array
+{
+    $stmt = $conn->prepare("SELECT id, name FROM users WHERE status = 'active' ORDER BY name");
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
 function fetch_subordinate_users(mysqli $conn, array $user, string $search = ''): array
 {
     $childRole = child_role_for($user['role']);
