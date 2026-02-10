@@ -197,6 +197,8 @@ CREATE TABLE IF NOT EXISTS job_fair_intends (
     reference_date DATE NULL,
     reference_job_fair_number VARCHAR(120) NOT NULL,
     job_fair_date DATE NULL,
+    target_openings INT NULL,
+    minimum_hr_required INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -209,6 +211,78 @@ CREATE TABLE IF NOT EXISTS job_fair_intend_locations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (intend_id) REFERENCES job_fair_intends(id) ON DELETE CASCADE,
     FOREIGN KEY (sdpk_center_id) REFERENCES sdpk_centers(id)
+);
+
+CREATE TABLE IF NOT EXISTS aggregators (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(200) NOT NULL,
+    spoc_name VARCHAR(150) NULL,
+    spoc_mobile VARCHAR(30) NULL,
+    spoc_email VARCHAR(180) NULL
+);
+
+CREATE TABLE IF NOT EXISTS employers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(200) NOT NULL,
+    spoc_name VARCHAR(150) NULL,
+    spoc_mobile VARCHAR(30) NULL,
+    spoc_email VARCHAR(180) NULL,
+    aggregator_id INT NULL,
+    FOREIGN KEY (aggregator_id) REFERENCES aggregators(id)
+);
+
+CREATE TABLE IF NOT EXISTS education_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS salary_ranges (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS job_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS job_titles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    job_code VARCHAR(50) NOT NULL UNIQUE,
+    job_title VARCHAR(200) NOT NULL,
+    employer_id INT NOT NULL,
+    openings INT NOT NULL DEFAULT 0,
+    education_category_id INT NULL,
+    salary_range_id INT NULL,
+    job_category_id INT NULL,
+    job_location VARCHAR(200) NULL,
+    job_description TEXT NULL,
+    job_details TEXT NULL,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    FOREIGN KEY (employer_id) REFERENCES employers(id),
+    FOREIGN KEY (education_category_id) REFERENCES education_categories(id),
+    FOREIGN KEY (salary_range_id) REFERENCES salary_ranges(id),
+    FOREIGN KEY (job_category_id) REFERENCES job_categories(id)
+);
+
+CREATE TABLE IF NOT EXISTS job_fair_intend_employers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    intend_id INT NOT NULL,
+    employer_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (intend_id) REFERENCES job_fair_intends(id) ON DELETE CASCADE,
+    FOREIGN KEY (employer_id) REFERENCES employers(id)
+);
+
+CREATE TABLE IF NOT EXISTS job_fair_intend_job_titles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    intend_id INT NOT NULL,
+    job_title_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (intend_id) REFERENCES job_fair_intends(id) ON DELETE CASCADE,
+    FOREIGN KEY (job_title_id) REFERENCES job_titles(id)
 );
 
 CREATE TABLE IF NOT EXISTS blog_posts (

@@ -66,6 +66,8 @@ function create_job_fair_intend(mysqli $conn, array $data, array &$errors): int
     $referenceDate = ($data['reference_date'] ?? '') !== '' ? $data['reference_date'] : null;
     $referenceJobFairNumber = trim($data['reference_job_fair_number'] ?? '');
     $jobFairDate = ($data['job_fair_date'] ?? '') !== '' ? $data['job_fair_date'] : null;
+    $targetOpenings = ($data['target_openings'] ?? '') !== '' ? (int) $data['target_openings'] : null;
+    $minimumHrRequired = ($data['minimum_hr_required'] ?? '') !== '' ? (int) $data['minimum_hr_required'] : null;
 
     if (!$intendDate) {
         $errors[] = 'Intend date is required.';
@@ -82,10 +84,19 @@ function create_job_fair_intend(mysqli $conn, array $data, array &$errors): int
     }
 
     $stmt = $conn->prepare(
-        'INSERT INTO job_fair_intends (intend_date, reference_committee_number, reference_date, reference_job_fair_number, job_fair_date) ' .
-        'VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO job_fair_intends (intend_date, reference_committee_number, reference_date, reference_job_fair_number, job_fair_date, target_openings, minimum_hr_required) ' .
+        'VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
-    $stmt->bind_param('sssss', $intendDate, $referenceCommitteeNumber, $referenceDate, $referenceJobFairNumber, $jobFairDate);
+    $stmt->bind_param(
+        'sssssii',
+        $intendDate,
+        $referenceCommitteeNumber,
+        $referenceDate,
+        $referenceJobFairNumber,
+        $jobFairDate,
+        $targetOpenings,
+        $minimumHrRequired
+    );
     $stmt->execute();
 
     return $stmt->insert_id;
@@ -183,6 +194,117 @@ function replace_intend_locations(mysqli $conn, int $intendId, string $locationT
         foreach ($centerIds as $centerId) {
             $centerValue = (int) $centerId;
             $insertStmt->bind_param('isi', $intendId, $locationType, $centerValue);
+            $insertStmt->execute();
+        }
+    }
+
+    $conn->commit();
+}
+
+function update_job_fair_intend_targets(mysqli $conn, int $intendId, array $data, array &$errors): void
+{
+    $targetOpenings = ($data['target_openings'] ?? '') !== '' ? (int) $data['target_openings'] : null;
+    $minimumHrRequired = ($data['minimum_hr_required'] ?? '') !== '' ? (int) $data['minimum_hr_required'] : null;
+
+    if ($targetOpenings !== null && $targetOpenings < 0) {
+        $errors[] = 'Target openings must be zero or more.';
+    }
+    if ($minimumHrRequired !== null && $minimumHrRequired < 0) {
+        $errors[] = 'Minimum HR required must be zero or more.';
+    }
+
+    if (!empty($errors)) {
+        return;
+    }
+
+    $stmt = $conn->prepare(
+        'UPDATE job_fair_intends SET target_openings = ?, minimum_hr_required = ? WHERE id = ?'
+    );
+    $stmt->bind_param('iii', $targetOpenings, $minimumHrRequired, $intendId);
+    $stmt->execute();
+}
+
+function fetch_employers_for_intend(mysqli $conn): array
+{
+    $stmt = $conn->prepare(
+        'SELECT e.id, e.code, e.name, e.spoc_name, e.spoc_mobile, e.spoc_email, a.name AS aggregator_name ' .
+        'FROM employers e LEFT JOIN aggregators a ON e.aggregator_id = a.id ORDER BY e.name'
+    );
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_job_titles_for_intend(mysqli $conn): array
+{
+    $stmt = $conn->prepare(
+        'SELECT jt.id, jt.job_code, jt.job_title, jt.openings, e.name AS employer_name ' .
+        'FROM job_titles jt JOIN employers e ON jt.employer_id = e.id ORDER BY jt.job_title'
+    );
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function fetch_intend_employer_ids(mysqli $conn, int $intendId): array
+{
+    $stmt = $conn->prepare('SELECT employer_id FROM job_fair_intend_employers WHERE intend_id = ?');
+    $stmt->bind_param('i', $intendId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+
+    return array_map(static fn(array $row): int => (int) $row['employer_id'], $rows);
+}
+
+function fetch_intend_job_title_ids(mysqli $conn, int $intendId): array
+{
+    $stmt = $conn->prepare('SELECT job_title_id FROM job_fair_intend_job_titles WHERE intend_id = ?');
+    $stmt->bind_param('i', $intendId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = $result->fetch_all(MYSQLI_ASSOC);
+
+    return array_map(static fn(array $row): int => (int) $row['job_title_id'], $rows);
+}
+
+function replace_intend_employers(mysqli $conn, int $intendId, array $employerIds): void
+{
+    $conn->begin_transaction();
+    $deleteStmt = $conn->prepare('DELETE FROM job_fair_intend_employers WHERE intend_id = ?');
+    $deleteStmt->bind_param('i', $intendId);
+    $deleteStmt->execute();
+
+    if (!empty($employerIds)) {
+        $insertStmt = $conn->prepare(
+            'INSERT INTO job_fair_intend_employers (intend_id, employer_id) VALUES (?, ?)'
+        );
+        foreach ($employerIds as $employerId) {
+            $value = (int) $employerId;
+            $insertStmt->bind_param('ii', $intendId, $value);
+            $insertStmt->execute();
+        }
+    }
+
+    $conn->commit();
+}
+
+function replace_intend_job_titles(mysqli $conn, int $intendId, array $jobTitleIds): void
+{
+    $conn->begin_transaction();
+    $deleteStmt = $conn->prepare('DELETE FROM job_fair_intend_job_titles WHERE intend_id = ?');
+    $deleteStmt->bind_param('i', $intendId);
+    $deleteStmt->execute();
+
+    if (!empty($jobTitleIds)) {
+        $insertStmt = $conn->prepare(
+            'INSERT INTO job_fair_intend_job_titles (intend_id, job_title_id) VALUES (?, ?)'
+        );
+        foreach ($jobTitleIds as $jobTitleId) {
+            $value = (int) $jobTitleId;
+            $insertStmt->bind_param('ii', $intendId, $value);
             $insertStmt->execute();
         }
     }
