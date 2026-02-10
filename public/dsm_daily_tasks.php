@@ -5,9 +5,13 @@ require_once __DIR__ . '/../src/dsm_daily_tasks.php';
 require_auth();
 $conn = db_connect();
 $user = current_user();
-
-$mode = $_GET['mode'] ?? 'list';
-$taskId = isset($_GET['task_id']) ? (int) $_GET['task_id'] : 0;
+$process = (string) ($_GET['process'] ?? $_POST['process'] ?? '');
+$allowedProcesses = ['', 'new_employer', 'edit_employer', 'new_job_title', 'edit_job_title'];
+if (!in_array($process, $allowedProcesses, true)) {
+    $process = '';
+}
+$search = trim($_GET['search'] ?? '');
+$message = '';
 $errors = [];
 $message = '';
 
@@ -15,6 +19,12 @@ if (isset($_GET['created'])) {
     $message = 'Daily task created successfully.';
 }
 if (isset($_GET['updated'])) {
+    $message = 'Daily task updated successfully.';
+}
+if (isset($_GET['task_created'])) {
+    $message = 'Daily task created successfully.';
+}
+if (isset($_GET['task_updated'])) {
     $message = 'Daily task updated successfully.';
 }
 if (isset($_GET['task_created'])) {
@@ -77,6 +87,17 @@ $filters = [
 $tasks = fetch_dsm_daily_tasks($conn, $filters);
 
 
+$filters = [
+    'date_from' => $_GET['date_from'] ?? '',
+    'date_to' => $_GET['date_to'] ?? '',
+    'job_fair_number' => trim($_GET['job_fair_number'] ?? ''),
+    'employer_name' => trim($_GET['employer_name'] ?? ''),
+    'job_title' => trim($_GET['job_title'] ?? ''),
+    'meeting_owner' => trim($_GET['meeting_owner'] ?? ''),
+];
+$tasks = fetch_dsm_daily_tasks($conn, $filters);
+
+
 include __DIR__ . '/partials/header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -103,7 +124,7 @@ include __DIR__ . '/partials/header.php';
     </div>
 <?php endif; ?>
 
-<?php if ($process === ''): ?>
+<?php if (($process ?? '') === ''): ?>
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
             <h2 class="h5 mb-3">Select Process</h2>
@@ -112,8 +133,36 @@ include __DIR__ . '/partials/header.php';
                 <a class="btn btn-outline-primary" href="/dsm_daily_tasks.php?process=edit_employer">Edit employer</a>
                 <a class="btn btn-primary" href="/dsm_daily_tasks.php?process=new_job_title">New job title</a>
                 <a class="btn btn-outline-primary" href="/dsm_daily_tasks.php?process=edit_job_title">Edit job title</a>
-                <a class="btn btn-success" href="/dsm_daily_task_entry.php">New DSM task</a>
+                <a class="btn btn-success" role="button" href="/dsm_daily_task_entry.php">New DSM task</a>
             </div>
+            <?php if (empty($tasks)): ?>
+                <div class="alert alert-info mb-0">No daily tasks found for selected filters.</div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Task type</th>
+                            <th>Task title</th>
+                            <th>Result</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($tasks as $task): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($task['task_date']); ?></td>
+                                <td><?php echo htmlspecialchars($task['task_type_name']); ?></td>
+                                <td><?php echo htmlspecialchars($task['task_title']); ?></td>
+                                <td><?php echo htmlspecialchars($task['result']); ?></td>
+                                <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/dsm_daily_task_entry.php?task_id=<?php echo (int) $task['id']; ?>">Edit</a></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -189,7 +238,7 @@ include __DIR__ . '/partials/header.php';
             <?php endif; ?>
         </div>
     </div>
-<?php elseif ($process === 'new_employer'): ?>
+<?php elseif (($process ?? '') === 'new_employer'): ?>
 
     <div class="card border-0 shadow-sm">
         <div class="card-body">
@@ -253,16 +302,17 @@ include __DIR__ . '/partials/header.php';
 
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Job title</label>
-                    <select class="form-select" name="job_title_id">
-                        <option value="">Select job title</option>
-
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Meeting members</label>
-                    <textarea class="form-control" name="meeting_members" rows="2"><?php echo htmlspecialchars($_POST['meeting_members'] ?? ($formTask['meeting_members'] ?? '')); ?></textarea>
+            </form>
+        </div>
+    </div>
+<?php elseif (($process ?? '') === 'edit_employer'): ?>
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <h2 class="h5 mb-3">Edit employer</h2>
+            <form class="row g-2" method="get">
+                <input type="hidden" name="process" value="edit_employer">
+                <div class="col-md-8">
+                    <input class="form-control" name="search" placeholder="Search employer by name/code" value="<?php echo htmlspecialchars($search); ?>">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Result</label>
@@ -334,29 +384,49 @@ include __DIR__ . '/partials/header.php';
                 <button class="btn btn-primary" type="submit">Apply</button>
             </div>
         </div>
-    </div>
-</form>
-
-<div class="card border-0 shadow-sm">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="h5 mb-0">Task List</h2>
-            <span class="text-muted small"><?php echo count($tasks); ?> records found.</span>
+    <?php endif; ?>
+<?php elseif (($process ?? '') === 'new_job_title'): ?>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h2 class="h5 mb-3">New job title</h2>
+            <p class="text-muted small">Create a new job title under an employer. Date-based creation log is captured automatically.</p>
+            <form method="post" class="row g-3">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                <input type="hidden" name="action" value="create_job_title">
+                <div class="col-md-4"><label class="form-label">Job code</label><input class="form-control" name="job_code" required value="<?php echo htmlspecialchars($_POST['job_code'] ?? ''); ?>"></div>
+                <div class="col-md-8"><label class="form-label">Job title</label><input class="form-control" name="job_title" required value="<?php echo htmlspecialchars($_POST['job_title'] ?? ''); ?>"></div>
+                <div class="col-md-6">
+                    <label class="form-label">Employer</label>
+                    <select class="form-select" name="employer_id" required>
+                        <option value="">Select employer</option>
+                        <?php foreach ($employers as $employer): ?>
+                            <option value="<?php echo (int) $employer['id']; ?>" <?php echo (($_POST['employer_id'] ?? '') == $employer['id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($employer['name'] . ' (' . $employer['code'] . ')'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-3"><label class="form-label">Openings</label><input type="number" min="0" class="form-control" name="openings" value="<?php echo htmlspecialchars($_POST['openings'] ?? '0'); ?>"></div>
+                <div class="col-md-3"><label class="form-label">Status</label><select class="form-select" name="status"><option value="active">Active</option><option value="inactive" <?php echo (($_POST['status'] ?? '') === 'inactive') ? 'selected' : ''; ?>>Inactive</option></select></div>
+                <div class="col-md-6"><label class="form-label">Job location</label><input class="form-control" name="job_location" value="<?php echo htmlspecialchars($_POST['job_location'] ?? ''); ?>"></div>
+                <div class="col-md-6"><label class="form-label">Job description</label><input class="form-control" name="job_description" value="<?php echo htmlspecialchars($_POST['job_description'] ?? ''); ?>"></div>
+                <div class="col-12"><label class="form-label">Job details</label><textarea class="form-control" name="job_details" rows="3"><?php echo htmlspecialchars($_POST['job_details'] ?? ''); ?></textarea></div>
+                <div class="col-12 d-flex gap-2"><button class="btn btn-primary" type="submit">Save job title</button><a class="btn btn-outline-secondary" href="/dsm_daily_tasks.php">Process home</a></div>
+            </form>
         </div>
-        <?php if (empty($tasks)): ?>
-            <div class="alert alert-info mb-0">No daily tasks found for selected filters.</div>
-        <?php else: ?>
-            <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead class="table-light">
-                    <tr>
-                        <th>Date</th>
-                        <th>Task type</th>
-                        <th>Task title</th>
-                        <th>Result</th>
-                        <th></th>
-                    </tr>
-                    </thead>
+    </div>
+<?php elseif (($process ?? '') === 'edit_job_title'): ?>
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <h2 class="h5 mb-3">Edit job title</h2>
+            <form class="row g-2" method="get">
+                <input type="hidden" name="process" value="edit_job_title">
+                <div class="col-md-8"><input class="form-control" name="search" placeholder="Search employer/job title/job code" value="<?php echo htmlspecialchars($search); ?>"></div>
+                <div class="col-md-4 d-flex gap-2"><button class="btn btn-outline-primary w-100" type="submit">Search</button><a class="btn btn-outline-secondary w-100" href="/dsm_daily_tasks.php?process=edit_job_title">Reset</a></div>
+            </form>
+            <div class="table-responsive mt-3">
+                <table class="table table-sm align-middle">
+                    <thead class="table-light"><tr><th>Job code</th><th>Job title</th><th>Employer</th><th></th></tr></thead>
                     <tbody>
                     <?php foreach ($tasks as $task): ?>
                         <tr>
