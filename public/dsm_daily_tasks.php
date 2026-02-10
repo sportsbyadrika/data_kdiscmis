@@ -51,6 +51,12 @@ if (isset($_GET['task_created'])) {
 if (isset($_GET['task_updated'])) {
     $message = 'Daily task updated successfully.';
 }
+if (isset($_GET['task_created'])) {
+    $message = 'Daily task created successfully.';
+}
+if (isset($_GET['task_updated'])) {
+    $message = 'Daily task updated successfully.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
@@ -149,6 +155,17 @@ $filters = [
 $tasks = fetch_dsm_daily_tasks($conn, $filters);
 
 
+$filters = [
+    'date_from' => $_GET['date_from'] ?? '',
+    'date_to' => $_GET['date_to'] ?? '',
+    'job_fair_number' => trim($_GET['job_fair_number'] ?? ''),
+    'employer_name' => trim($_GET['employer_name'] ?? ''),
+    'job_title' => trim($_GET['job_title'] ?? ''),
+    'meeting_owner' => trim($_GET['meeting_owner'] ?? ''),
+];
+$tasks = fetch_dsm_daily_tasks($conn, $filters);
+
+
 include __DIR__ . '/partials/header.php';
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -168,9 +185,9 @@ include __DIR__ . '/partials/header.php';
 <?php if (!empty($errors)) { ?>
     <div class="alert alert-danger mb-3">
         <ul class="mb-0">
-            <?php foreach ($errors as $error): ?>
+            <?php foreach ($errors as $error) { ?>
                 <li><?php echo htmlspecialchars($error); ?></li>
-            <?php endforeach; ?>
+            <?php } ?>
         </ul>
     </div>
 <?php } ?>
@@ -246,7 +263,7 @@ include __DIR__ . '/partials/header.php';
                         </tr>
                         </thead>
                         <tbody>
-                        <?php foreach ($tasks as $task): ?>
+                        <?php foreach ($tasks as $task) { ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($task['task_date']); ?></td>
                                 <td><?php echo htmlspecialchars($task['task_type_name']); ?></td>
@@ -254,7 +271,7 @@ include __DIR__ . '/partials/header.php';
                                 <td><?php echo htmlspecialchars($task['result']); ?></td>
                                 <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/dsm_daily_task_entry.php?task_id=<?php echo (int) $task['id']; ?>">Edit</a></td>
                             </tr>
-                        <?php endforeach; ?>
+                        <?php } ?>
                         </tbody>
                     </table>
                 </div>
@@ -310,12 +327,11 @@ include __DIR__ . '/partials/header.php';
                     <label class="form-label">Aggregator</label>
                     <select class="form-select" name="aggregator_id" id="aggregator_id">
                         <option value="">Select aggregator</option>
-                        <?php foreach ($aggregators as $aggregator): ?>
-                            <?php $selected = $_POST['aggregator_id'] ?? ($formTask['aggregator_id'] ?? ''); ?>
-                            <option value="<?php echo (int) $aggregator['id']; ?>" <?php echo ((string) $selected === (string) $aggregator['id']) ? 'selected' : ''; ?>>
+                        <?php foreach ($aggregators as $aggregator) { ?>
+                            <option value="<?php echo (int) $aggregator['id']; ?>" <?php echo (($_POST['aggregator_id'] ?? '') == $aggregator['id']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($aggregator['name']); ?>
                             </option>
-                        <?php endforeach; ?>
+                        <?php } ?>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -369,6 +385,23 @@ include __DIR__ . '/partials/header.php';
                     <a class="btn btn-outline-secondary" href="/dsm_daily_tasks.php">Back to list</a>
                 </div>
             </form>
+            <div class="table-responsive mt-3">
+                <table class="table table-sm align-middle">
+                    <thead class="table-light">
+                        <tr><th>Code</th><th>Name</th><th>Aggregator</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($employers as $employer) { ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($employer['code']); ?></td>
+                            <td><?php echo htmlspecialchars($employer['name']); ?></td>
+                            <td><?php echo htmlspecialchars($employer['aggregator_name'] ?? '-'); ?></td>
+                            <td class="text-end"><a class="btn btn-sm btn-primary" href="/dsm_daily_tasks.php?process=edit_employer&employer_id=<?php echo (int) $employer['id']; ?>">Edit</a></td>
+                        </tr>
+                    <?php } ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     <?php if ($selectedEmployer) { ?>
@@ -388,12 +421,12 @@ include __DIR__ . '/partials/header.php';
                         <label class="form-label">Aggregator</label>
                         <select class="form-select" name="aggregator_id">
                             <option value="">Select aggregator</option>
-                            <?php foreach ($aggregators as $aggregator): ?>
+                            <?php foreach ($aggregators as $aggregator) { ?>
                                 <?php $selectedAgg = $_POST['aggregator_id'] ?? $selectedEmployer['aggregator_id']; ?>
                                 <option value="<?php echo (int) $aggregator['id']; ?>" <?php echo ((string) $selectedAgg === (string) $aggregator['id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($aggregator['name']); ?>
                                 </option>
-                            <?php endforeach; ?>
+                            <?php } ?>
                         </select>
                     </div>
                     <div class="col-12"><button class="btn btn-primary" type="submit">Update employer</button></div>
@@ -415,11 +448,11 @@ include __DIR__ . '/partials/header.php';
                     <label class="form-label">Employer</label>
                     <select class="form-select" name="employer_id" required>
                         <option value="">Select employer</option>
-                        <?php foreach ($employers as $employer): ?>
+                        <?php foreach ($employers as $employer) { ?>
                             <option value="<?php echo (int) $employer['id']; ?>" <?php echo (($_POST['employer_id'] ?? '') == $employer['id']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($employer['name'] . ' (' . $employer['code'] . ')'); ?>
                             </option>
-                        <?php endforeach; ?>
+                        <?php } ?>
                     </select>
                 </div>
                 <div class="col-md-3"><label class="form-label">Openings</label><input type="number" min="0" class="form-control" name="openings" value="<?php echo htmlspecialchars($_POST['openings'] ?? '0'); ?>"></div>
@@ -444,7 +477,7 @@ include __DIR__ . '/partials/header.php';
                 <table class="table table-sm align-middle">
                     <thead class="table-light"><tr><th>Job code</th><th>Job title</th><th>Employer</th><th></th></tr></thead>
                     <tbody>
-                    <?php foreach ($tasks as $task): ?>
+                    <?php foreach ($jobTitles as $item) { ?>
                         <tr>
                             <td><?php echo htmlspecialchars($task['task_date']); ?></td>
                             <td><?php echo htmlspecialchars($task['task_type_name']); ?></td>
@@ -454,7 +487,7 @@ include __DIR__ . '/partials/header.php';
                                 <a class="btn btn-sm btn-outline-primary" href="/dsm_daily_tasks.php?mode=edit&task_id=<?php echo (int) $task['id']; ?>">Edit</a>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
+                    <?php } ?>
                     </tbody>
                 </table>
             </div>
@@ -475,12 +508,12 @@ include __DIR__ . '/partials/header.php';
                         <label class="form-label">Employer</label>
                         <select class="form-select" name="employer_id" required>
                             <option value="">Select employer</option>
-                            <?php foreach ($employers as $employer): ?>
+                            <?php foreach ($employers as $employer) { ?>
                                 <?php $selectedEmp = $_POST['employer_id'] ?? $selectedJobTitle['employer_id']; ?>
                                 <option value="<?php echo (int) $employer['id']; ?>" <?php echo ((string) $selectedEmp === (string) $employer['id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($employer['name'] . ' (' . $employer['code'] . ')'); ?>
                                 </option>
-                            <?php endforeach; ?>
+                            <?php } ?>
                         </select>
                     </div>
                     <div class="col-md-3"><label class="form-label">Openings</label><input type="number" min="0" class="form-control" name="openings" value="<?php echo htmlspecialchars($_POST['openings'] ?? (string) $selectedJobTitle['openings']); ?>"></div>
